@@ -1,50 +1,46 @@
 import React from "react";
 import { UserCircle, Plus, Droplet, CupSoda, Scale, BarChart2, Utensils } from "lucide-react";
+import { Route } from "react-router-dom";
+import Container from "../components/container";
+import ButtonContainer from "../components/ButtonContainer";
+import Header from "../components/Header";
 
 const Home: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900 p-2 md:p-6">
       {/* Header */}
-      <header className="flex items-center gap-4 mb-6 px-2 md:px-0">
-        <div className="bg-gradient-to-tr from-emerald-500 to-cyan-500 rounded-full p-2">
-          <UserCircle className="w-10 h-10 text-white" />
-        </div>
-        <div>
-          <div className="text-lg font-semibold text-white">Ciao, Utente!</div>
-          <div className="text-xs text-gray-400">domenica 6 luglio</div>
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <button className="relative">
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-            <svg className="w-6 h-6 text-white opacity-80" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-          </button>
-        </div>
-      </header>
+      
+      <Header />
 
       {/* Azioni rapide */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="rounded-xl bg-emerald-200/10 border border-emerald-400/20 p-4 flex flex-col items-center justify-center min-h-[70px]">
+      
+        <ButtonContainer color="emerald" link="food">
           <Plus className="text-emerald-400 mb-1" />
           <span className="text-emerald-200 text-sm">Alimento</span>
-        </div>
-        <div className="rounded-xl bg-yellow-200/10 border border-yellow-400/20 p-4 flex flex-col items-center justify-center min-h-[70px]">
-          <CupSoda className="text-yellow-300 mb-1" />
+        </ButtonContainer>
+
+        <ButtonContainer color="yellow" link="">
+        <CupSoda className="text-yellow-300 mb-1" />
           <span className="text-yellow-200 text-sm">Bevanda</span>
-        </div>
-        <div className="rounded-xl bg-blue-200/10 border border-blue-400/20 p-4 flex flex-col items-center justify-center min-h-[70px]">
+        </ButtonContainer>
+
+        <ButtonContainer color="blue" link="">
           <Droplet className="text-blue-300 mb-1" />
           <span className="text-blue-200 text-sm">Acqua</span>
-        </div>
-        <div className="rounded-xl bg-purple-200/10 border border-purple-400/20 p-4 flex flex-col items-center justify-center min-h-[70px]">
+        </ButtonContainer>
+
+        <ButtonContainer color="purple" link="">
           <Scale className="text-purple-300 mb-1" />
           <span className="text-purple-200 text-sm">Peso</span>
-        </div>
+        </ButtonContainer>
+
       </section>
 
       {/* Cards principali */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {/* Nutrizione */}
-        <div className="bg-gray-900 rounded-2xl shadow-lg p-6 flex flex-col gap-4 border border-gray-800">
+        <Container>
           <div className="flex items-center gap-2 text-green-400 font-semibold text-lg">
             <Utensils className="w-5 h-5" />
             Nutrizione Oggi
@@ -63,9 +59,10 @@ const Home: React.FC = () => {
               <Plus className="w-4 h-4" /> Aggiungi il primo alimento
             </button>
           </div>
-        </div>
+        </Container>
+        
         {/* Idratazione */}
-        <div className="bg-gray-900 rounded-2xl shadow-lg p-6 flex flex-col gap-4 border border-gray-800">
+        <Container>
           <div className="flex items-center gap-2 text-blue-400 font-semibold text-lg">
             <Droplet className="w-5 h-5" />
             Idratazione Totale
@@ -86,9 +83,10 @@ const Home: React.FC = () => {
               <CupSoda className="w-4 h-4" /> Bevanda
             </button>
           </div>
-        </div>
+        </Container>
+
         {/* Peso */}
-        <div className="bg-gray-900 rounded-2xl shadow-lg p-6 flex flex-col gap-4 border border-gray-800">
+        <Container>
           <div className="flex items-center gap-2 text-purple-300 font-semibold text-lg">
             <Scale className="w-5 h-5" />
             Peso & Andamento
@@ -101,9 +99,10 @@ const Home: React.FC = () => {
             </button>
             <span className="text-xs text-gray-500">0.0kg questa settimana</span>
           </div>
-        </div>
+        </Container>
+
         {/* Metabolismo */}
-        <div className="bg-gray-900 rounded-2xl shadow-lg p-6 flex flex-col gap-4 border border-gray-800">
+        <Container>
           <div className="flex items-center gap-2 text-orange-400 font-semibold text-lg">
             <BarChart2 className="w-5 h-5" />
             Metabolismo
@@ -121,7 +120,7 @@ const Home: React.FC = () => {
           <div className="text-xs text-gray-500 mt-2">
             Il TDEE è il tuo fabbisogno calorico giornaliero totale, calcolato in base al tuo metabolismo basale e livello di attività.
           </div>
-        </div>
+        </Container>
       </section>
 
       {/* Footer mobile (placeholder) */}
