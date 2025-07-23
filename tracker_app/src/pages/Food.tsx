@@ -3,14 +3,15 @@ import Header from "../components/Header";
 import Container from "../components/container";
 import ButtonContainer from "../components/ButtonContainer";
 import { Search, Zap, Clock, ChefHat, Plus } from "lucide-react";
+import FoodCard from "../components/FoodCard";
 
 const Food: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900 p-2 md:p-6">
       <Header />
       <main className="flex items-start  justify-center gap-2">
-        {/* search container */}
         <div className="flex flex-col w-[60%] gap-2">
+          {/* search container */}
           <Container>
             <div className="flex items-center justify-between gap-2 ">
               <div className="flex items-center gap-2">
@@ -35,6 +36,7 @@ const Food: React.FC = () => {
             </div>
           </Container>
 
+          {/* recent food container */}
           <Container>
             <div className="flex items-center justify-between gap-2 ">
               <div className="flex items-center gap-2">
@@ -48,9 +50,18 @@ const Food: React.FC = () => {
                 <span className="text-white text-[10px]">Accesso Rapido</span>
               </div>
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FoodCard name="Petto di Pollo" type="Proteine" typeColor="red" kcal={165} protein={31} carbs={0} fat={3.6} />
+              <FoodCard name="Riso Basmati" type="Carboidrati" typeColor="yellow" kcal={130} protein={2.7} carbs={28} fat={0.3} />
+              <FoodCard name="Broccoli" type="Verdure" typeColor="green" kcal={34} protein={2.8} carbs={7} fat={0.4} />
+              <FoodCard name="Olio EVO" type="Grassi" typeColor="purple" kcal={884} protein={0} carbs={0} fat={100} />
+              <FoodCard name="Banana" type="Frutta" typeColor="orange" kcal={89} protein={1.1} carbs={23} fat={0.3} />
+              <FoodCard name="Yogurt Greco" type="Latticini" typeColor="blue" kcal={59} protein={10} carbs={3.6} fat={0.4} />
+            </div>
           </Container>
         </div>
 
+        {/* create food container */}
         <Container css="max-w-[350px]">
           <div className="flex items-center gap-2">
             <div className="bg-orange-900/50 rounded-lg w-fit p-2">
