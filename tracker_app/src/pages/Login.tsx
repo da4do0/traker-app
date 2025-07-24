@@ -69,7 +69,6 @@ const Login: React.FC = () => {
                                     onChange={(e) => setusername(e.target.value)}
                                     className="block w-full pl-10 pr-3 py-3 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 bg-gray-700/50 text-white placeholder-gray-400 focus:bg-gray-700"
                                     placeholder="user123"
-                                    //required
                                 />
                             </div>
                         </div>
