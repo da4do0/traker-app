@@ -6,12 +6,14 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import Food from './pages/Food';
+import Register from './pages/Register';
 
 const App: React.FC = () => {
   return (
     <Router>
         <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route 
                 path="/" 
                 element={

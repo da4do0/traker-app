@@ -1,28 +1,44 @@
 
 import type React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../hooks/useAuth"
 import { Mail, Lock, Utensils, Eye, EyeOff, AlertCircle, Moon } from "lucide-react"
+import Input from "../components/input"
 
-const Login: React.FC = () => {
+//todo: Sistemare la grafica degl'input
+
+const Register: React.FC = () => {
     const [username, setusername] = useState("")
     const [password, setPassword] = useState("")
+    const [name, setName] = useState("")
+    const [surname, setSurname] = useState("")
+    const [email, setEmail] = useState("")
+
     const [error, setError] = useState("")
     const [showPassword, setShowPassword] = useState(false)
+
     const navigate = useNavigate()
     const { login } = useAuth()
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
         setError("");
-        //todo: rimuovere questo
-        if (login("admin@example.com", "password")) {
+
+        if (true) {
             navigate("/");
         } else {
             setError("Credenziali non valide. Usa admin@example.com / password");
         } 
     }
+
+    useEffect(() => {
+        console.log(name, "name modificato");
+        console.log(username, "username modificato");
+        console.log(surname, "surname modificato");
+        console.log(email, "email modificato");
+        console.log(password, "password modificato");
+    }, [name, surname, username, email, password]);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-blue-950 flex items-center justify-center p-4">
@@ -53,64 +69,22 @@ const Login: React.FC = () => {
 
                     {/* Form */}
                     <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Campo name */}
+                        <Input label="Name" value={name} onChange={setName} placeHolder="Mario"/>
+                        {/* Campo surname */}
+                        <Input label="Surname" value={surname} onChange={setSurname} placeHolder="Rossi"/>
+                        {/* Campo email */}
+                        <Input label="Email" value={email} onChange={setEmail} placeHolder="Mario.rossi@email.com"/>
                         {/* Campo username */}
-                        <div>
-                            <label htmlFor="username" className="block text-sm font-medium text-gray-200 mb-2">
-                                username
-                            </label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Mail className="h-5 w-5 text-gray-400" />
-                                </div>
-                                <input
-                                    type="username"
-                                    id="username"
-                                    value={username}
-                                    onChange={(e) => setusername(e.target.value)}
-                                    className="block w-full pl-10 pr-3 py-3 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 bg-gray-700/50 text-white placeholder-gray-400 focus:bg-gray-700"
-                                    placeholder="user123"
-                                />
-                            </div>
-                        </div>
-
+                        <Input label="Username" value={username} onChange={setusername} placeHolder="Mario.rossi"/>
                         {/* Campo Password */}
-                        <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-200 mb-2">
-                                Password
-                            </label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Lock className="h-5 w-5 text-gray-400" />
-                                </div>
-                                <input
-                                    type={showPassword ? "text" : "password"}
-                                    id="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="block w-full pl-10 pr-12 py-3 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 bg-gray-700/50 text-white placeholder-gray-400 focus:bg-gray-700"
-                                    placeholder="••••••••"
-                                    //required
-                                />
-                                <button
-                                    type="button"
-                                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                >
-                                    {showPassword ? (
-                                        <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-300 transition-colors" />
-                                    ) : (
-                                        <Eye className="h-5 w-5 text-gray-400 hover:text-gray-300 transition-colors" />
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-
+                        <Input label="Password" value={password} onChange={setPassword} placeHolder="°°°°°"/>
                         {/* Bottone di accesso */}
                         <button
                             type="submit"
                             className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-500/25"
                         >
-                            Accedi al tuo account
+                            Registrati ora!
                         </button>
                     </form>
                     
@@ -120,7 +94,7 @@ const Login: React.FC = () => {
                 <div className="text-center mt-6">
                     <p className="text-sm text-gray-400">
                         Non hai un account?{" "}
-                        <a href="/register" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
+                        <a href="#" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">
                             Registrati qui
                         </a>
                     </p>
@@ -136,4 +110,4 @@ const Login: React.FC = () => {
     )
 }
 
-export default Login
+export default Register;
