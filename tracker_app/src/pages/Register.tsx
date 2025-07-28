@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import Input from "../components/input";
 import type { User } from "../interfaces/User";
-import { useAPIController } from "../hooks/APIController";
+import { APIDbHandler } from "../api/APIHandler";
 
 //todo: Sistemare la grafica degl'input
 
@@ -30,43 +30,32 @@ const Register: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    newUser({
-      Cognome: surname,
-      Email: email,
-      Nome: name,
-      Password: password,
-      Username: username,
-    });
-    /* if (true) {
-      navigate("/");
-    } else {
-      setError("Credenziali non valide. Usa admin@example.com / password");
-    } */
-  };
-
-  // Usa APIController e correggi endpoint per evitare errori CORS/405
-  const api = useAPIController("http://localhost:5132");
-
-  const newUser = async (user: User) => {
     try {
-      // L'endpoint corretto secondo il backend è "/user" e il metodo POST
-      const response = await api.registerUser({
-        username: user.Username,
-        nome: user.Nome,
-        cognome: user.Cognome,
-        email: user.Email,
-        password: user.Password,
+      const response = await APIDbHandler.newUser({
+        Cognome: surname,
+        Email: email,
+        Nome: name,
+        Password: password,
+        Username: username,
       });
-      console.log(response, "Response register");
-      // Puoi aggiungere qui la logica di navigazione o login automatico
-    } catch (error: any) {
-      setError(error.message || "Errore durante la registrazione");
+      console.log(response, "risposta");
+      // Handle navigation or error based on response here
+      /* if (true) {
+        navigate("/");
+      } else {
+        setError("Credenziali non valide. Usa admin@example.com / password");
+      } */
+    } catch (err) {
+      setError("Errore durante la registrazione. Riprova.");
+      console.error(err);
     }
   };
+
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-blue-950 flex items-center justify-center p-4">
