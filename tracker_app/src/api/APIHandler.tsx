@@ -9,6 +9,12 @@ const CALLS = [
     endpoint: "user",
     isAuthenticated: false,
   },
+  {
+    name: "CheckUser",
+    method: "GET",
+    endpoint: "user/",
+    isAuthenticated: false,
+  },
 ];
 
 export class APIDbHandler {
@@ -152,6 +158,22 @@ export class APIDbHandler {
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(errorText || "Errore durante la registrazione");
+    }
+    return response.json();
+  }
+
+  static async checkUser(username: string) {
+    let call = this.getCall("CheckUser");
+    if (!call) throw new Error("Call CheckUser not found");
+    const response = await fetch(endpointAPI + call.endpoint + username, {
+      method: call.method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || "Errore durante il controllo dell'utente");
     }
     return response.json();
   }

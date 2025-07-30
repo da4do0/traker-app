@@ -1,7 +1,12 @@
 export interface User{
-    Nome: string;
-    Cognome: string;
-    Email: string;
-    Username: string;
-    Password: string;
+    nome: string;
+    cognome: string;
+    email: string;
+    username: string;
+    password: string;
+    sex: Sex;
+    dateofBirth: string;
+    height: number;
+    weight: number;
 }
+export type Sex = "Male" | "Female";

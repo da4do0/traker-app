@@ -26,16 +26,14 @@ namespace Api.Controllers
 
         // GET /user/{username}
         [HttpGet("{username}")]
-        public ActionResult<User> GetByUsername(string username)
+        public ActionResult<bool> CheckUserExists(string username)
         {
-            var user = _context.Users.FirstOrDefault(u => u.Username == username);
-            if (user == null)
+            bool exists = _context.Users.Any(u => u.Username == username);
+            if (!exists)
             {
-                return NotFound("User not found");
+                return Ok(exists);
             }
-            return Ok(user);
-
-            //bool isValid = BCrypt.Net.BCrypt.Verify(password, hashed);
+            return Ok(exists);
         }
 
         // POST /user
