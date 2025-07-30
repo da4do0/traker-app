@@ -79,5 +79,43 @@ namespace Api.Controllers
             _context.SaveChanges();
             return Ok(user);
         }
+
+        // GET /user/info/{username}
+        [HttpGet("info/{username}")]
+        public ActionResult<User> GetUserInfo(string username)
+        {
+            var user = _context.Users.FirstOrDefault(u => u.Username == username);
+            var registra = _context.UserFoods
+                .Where(uf => uf.User == user.Id)
+                .Select(uf => new
+                {
+                    uf.Id,
+                    uf.FoodId,
+                    uf.Quantity,
+                    uf.Date,
+                    Meal = uf.Meal.ToString()
+                })
+                .ToList();
+
+            var food = _context.Foods
+                .Where(f => registra.Select(r => r.FoodId).Contains(f.Id))
+                .Select(f => new
+                {
+                    f.Id,
+                    f.Name,
+                    f.Calories,
+                    f.Proteins,
+                    f.Carbohydrates,
+                    f.Fats
+                })
+                .ToList();
+
+            
+            if (user == null)
+            {
+                return NotFound("User not found");
+            }
+            return Ok(user);
+        }
     }
 }
