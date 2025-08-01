@@ -16,6 +16,7 @@ import Input from "../components/input";
 import type { User, Sex } from "../interfaces/User";
 import { APIDbHandler } from "../api/APIHandler";
 import RadioGroup from "../components/RadioGroup";
+import { useUser } from "../hooks/UserInfo";
 
 //todo: Sistemare la grafica degl'input
 
@@ -36,6 +37,7 @@ const Register: React.FC = () => {
 
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { setUsername } = useUser();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,6 +62,8 @@ const Register: React.FC = () => {
     if (response) {
       setError("");
       console.log(response, "Nuovo utente creato");
+      setUsername(username);
+      localStorage.setItem("username", username);
       // Login automatico dopo la registrazione
       try {
         navigate("/");
@@ -70,24 +74,6 @@ const Register: React.FC = () => {
     } else {
       setError("Errore durante la registrazione. Riprova.");
     }
-
-    // Handle navigation or error based on response here
-    /* if (true) {
-      navigate("/");
-    } else {
-      setError("Credenziali non valide. Usa admin@example.com / password");
-    } */
-    /* try {
-      const response = await APIDbHandler.checkUser(username);
-      if (response) {
-        setError("Username già esistente. Scegline un altro.");
-        return;
-      }
-      console.log(response, "Esiste utente?");
-    } catch (err) {
-      setError("Errore durante la registrazione. Riprova.");
-      console.error(err);
-    } */
   };
 
   const checkDataUser = async () => {

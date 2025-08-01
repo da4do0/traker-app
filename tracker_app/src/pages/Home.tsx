@@ -1,11 +1,46 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { UserCircle, Plus, Droplet, CupSoda, Scale, BarChart2, Utensils } from "lucide-react";
 import { Route } from "react-router-dom";
 import Container from "../components/container";
 import ButtonContainer from "../components/ButtonContainer";
 import Header from "../components/Header";
+import { useUser } from "../hooks/UserInfo";
+import { APIDbHandler } from "../api/APIHandler";
+import { useNavigate } from "react-router-dom";
 
 const Home: React.FC = () => {
+
+  const {username, setUsername} = useUser();
+  const navigate = useNavigate();
+
+  const checkLocalUsername = () => {
+    const storedUsername = localStorage.getItem("username");
+    return storedUsername ? true : false;
+  }
+
+  const getIfnoUser = async (username: string) => {
+    try {
+      const response = await APIDbHandler.InfoUser(username);
+      console.log(response, "User Info");
+    }
+    catch (error) {
+      console.error("Errore durante il recupero delle informazioni utente:", error);
+    }
+  }
+
+  useEffect(() => {
+    if (!username && !checkLocalUsername()) {
+      navigate("/login");
+    }else if (username) {
+      localStorage.setItem("username", username);
+    }else{
+      const storedUsername = localStorage.getItem("username");
+      setUsername(storedUsername || "");
+    }
+    
+    getIfnoUser(username);
+  },[]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900 p-2 md:p-6">
       {/* Header */}

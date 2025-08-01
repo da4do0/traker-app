@@ -4,7 +4,7 @@ namespace Api.model
     {
         public int Id { get; set; }
         public int FoodId { get; set; }
-        public int User { get; set; }
+        public int UserId { get; set; }
         public int Quantity { get; set; }
         public DateTime Date { get; set; }
         public MealType Meal { get; set; }

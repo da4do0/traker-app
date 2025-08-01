@@ -6,6 +6,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<Api.ApiDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddHttpClient();
+
 builder.Services.AddControllers();
 builder.Services.AddCors(options =>
 {

@@ -1,5 +1,121 @@
-# Logs
-logs
+# =======================
+# NODE.JS / REACT / VITE
+# =======================
+
+# Dependencies
+node_modules/
+tracker_app/node_modules/
+**/node_modules/
+**/bower_components/
+
+# Build outputs
+dist/
+dist-ssr/
+tracker_app/dist/
+tracker_app/build/
+build/
+
+# Vite specific
+.vite/
+tracker_app/.vite/
+
+# Environment files
+.env
+.env.*
+tracker_app/.env
+tracker_app/.env.*
+!.env.example
+
+# Package manager files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-debug.log*
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Testing
+coverage/
+*.lcov
+.nyc_output
+
+# =======================
+# .NET / ASP.NET CORE
+# =======================
+
+# Build outputs
+backend/Api/bin/
+backend/Api/obj/
+backend/**/bin/
+backend/**/obj/
+**/bin/
+**/obj/
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# Visual Studio files
+.vs/
+.vscode/
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/settings.json
+*.vspscc
+*.vssscc
+*.svclog
+*.swp
+*.swo
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Entity Framework
+*.edmx.diagram
+*.edmx.sql
+Migrations/
+
+# ASP.NET Core local settings
+backend/Api/appsettings.Development.json
+backend/Api/appsettings.Local.json
+appsettings.Development.json
+appsettings.Local.json
+
+# Database files
+*.mdf
+*.ldf
+*.ndf
+*.db
+*.sqlite
+*.sqlite3
+
+# =======================
+# LOGS
+# =======================
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -7,61 +123,123 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Node.js / React
-node_modules/
-dist/
-dist-ssr/
-tracker_app/node_modules/
-tracker_app/dist/
-tracker_app/.env
-tracker_app/.env.*
+# =======================
+# OPERATING SYSTEM
+# =======================
 
-# Dependency directories
-**/node_modules/
-**/bower_components/
-
-# Editor directories and files
-.vscode/
-!.vscode/extensions.json
-.idea/
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# System
+# Windows
 Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
 
-# .NET build output
-backend/Api/bin/
-backend/Api/obj/
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
 
-# .NET user-specific and build files
-*.dbmdl
-*.pdb
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# =======================
+# DEVELOPMENT TOOLS
+# =======================
+
+# JetBrains IDEs
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# Vim
+*.swp
+*.swo
+*~
+.viminfo
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# =======================
+# TEMPORARY FILES
+# =======================
+*.tmp
+*.temp
 *.cache
-*.mdb
-*.opendb
-*.pidb
-*.svclog
-*.user
-*.userprefs
-*.vspscc
-*.vssscc
-*.vsp
-*.vsix
-*.nupkg
-*.snk
-*.psess
-*.vspx
-*.vsix
-*.docstates
+*.pid
+*.seed
+*.pid.lock
 
-# ASP.NET local settings
-backend/Api/appsettings.Development.json
+# =======================
+# SECURITY & SENSITIVE DATA
+# =======================
+*.key
+*.pem
+*.p12
+*.pfx
+secrets.json
+appsettings.Production.json
 
-# Env files
-.env
-.env.*
+# =======================
+# PROJECT SPECIFIC
+# =======================
+
+# Hot reload
+.hot-reload/
+
+# TypeScript
+*.tsbuildinfo
+
+# ESLint
+.eslintcache
+
+# Prettier
+.prettierignore
+
+# Storybook
+.out
+.storybook-out
+storybook-static
+
+# Next.js (se mai dovessi usarlo)
+.next/
+out/
+
+# Nuxt.js (se mai dovessi usarlo)
+.nuxt
+dist
