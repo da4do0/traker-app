@@ -1,4 +1,4 @@
-const endpointAPI = "http://localhost:5132/"; // VALLI
+const endpointAPI = "http://localhost:5132/";
 import type { User } from "../interfaces/User";
 
 const CALLS = [
@@ -19,6 +19,12 @@ const CALLS = [
     name: "InfoUser",
     method: "GET",
     endpoint: "user/info/",
+    isAuthenticated: false,
+  },
+  {
+    name: "SearchFood",
+    method: "GET",
+    endpoint: "food/search/",
     isAuthenticated: false,
   },
 ];
@@ -196,6 +202,22 @@ export class APIDbHandler {
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(errorText || "Errore durante il controllo dell'utente");
+    }
+    return response.json();
+  }
+
+  static async SearchFood(query: string) {
+    let call = this.getCall("SearchFood");
+    if (!call) throw new Error("Call SearchFood not found");
+    const response = await fetch(endpointAPI + call.endpoint + query, {
+      method: call.method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || "Errore durante la ricerca del cibo");
     }
     return response.json();
   }
