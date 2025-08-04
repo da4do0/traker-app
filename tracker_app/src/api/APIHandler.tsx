@@ -24,7 +24,7 @@ const CALLS = [
   {
     name: "SearchFood",
     method: "GET",
-    endpoint: "food/search/",
+    endpoint: "food/search/eu/",
     isAuthenticated: false,
   },
 ];

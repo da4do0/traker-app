@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Api.model;
 using Microsoft.AspNetCore.Components.Forms;
@@ -130,20 +131,17 @@ namespace Api.Controllers
             [FromQuery] string? country = null
         )
         {
-            // Validazione input
             if (string.IsNullOrWhiteSpace(query))
             {
                 return BadRequest("Query parameter cannot be empty");
             }
 
-            // Limiti per evitare sovraccarico
             pageSize = Math.Clamp(pageSize, 1, 100);
             pageNumber = Math.Max(pageNumber, 1);
 
             var url =
                 $"{BaseEuUrl}/cgi/search.pl?search_terms={Uri.EscapeDataString(query)}&json=1&page_size={pageSize}&page={pageNumber}";
 
-            // Aggiungi filtro paese se specificato
             if (!string.IsNullOrEmpty(country))
             {
                 url += $"&countries={Uri.EscapeDataString(country)}";
@@ -152,9 +150,8 @@ namespace Api.Controllers
             try
             {
                 var request = new HttpRequestMessage(HttpMethod.Get, url);
-                request.Headers.UserAgent.ParseAdd("FoodTracker/1.0 (garavagliad2@gmail.com)");
+                request.Headers.UserAgent.ParseAdd("FoodTracker/1.0 (test)");
 
-                // Timeout per evitare richieste troppo lunghe
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 var response = await _httpClient.SendAsync(request, cts.Token);
 
@@ -165,30 +162,16 @@ namespace Api.Controllers
                         response.StatusCode,
                         query
                     );
-
-                    return response.StatusCode switch
-                    {
-                        HttpStatusCode.NotFound => NotFound("No results found for the given query"),
-                        HttpStatusCode.TooManyRequests => StatusCode(
-                            429,
-                            "Too many requests. Please try again later."
-                        ),
-                        _ => StatusCode(
-                            (int)response.StatusCode,
-                            "Error fetching data from food API"
-                        ),
-                    };
+                    return StatusCode(
+                        (int)response.StatusCode,
+                        "Error fetching data from food API"
+                    );
                 }
 
                 var jsonContent = await response.Content.ReadAsStringAsync();
 
-                // Controllo se la risposta è vuota
                 if (string.IsNullOrWhiteSpace(jsonContent))
                 {
-                    _logger.LogWarning(
-                        "Empty response from OpenFoodFacts API for query: {Query}",
-                        query
-                    );
                     return Ok(
                         new
                         {
@@ -199,71 +182,61 @@ namespace Api.Controllers
                     );
                 }
 
-                var data = JsonSerializer.Deserialize<Root>(
+                // USA SearchRoot invece di Root per l'endpoint di ricerca
+                var data = JsonSerializer.Deserialize<SearchRoot>(
                     jsonContent,
                     new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true,
-                        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                        NumberHandling = JsonNumberHandling.AllowReadingFromString,
                     }
                 );
 
-                // Aggiungi metadati utili alla risposta
-                var response_data = new
-                {
-                    query = query,
-                    page = pageNumber,
-                    pageSize = pageSize,
-                    country = country,
-                    totalResults = data?.Count ?? 0,
-                    products = data?.Products?.Select(p => new
+                // Risposta pulita e strutturata
+                var products = data
+                    ?.Products?.Select(p => new
                     {
                         code = p.Code,
-                        productName = p.ProductName,
+                        name = p.ProductName,
                         brands = p.Brands,
+                        quantity = p.Quantity,
+                        categories = p.Categories,
                         imageUrl = p.ImageUrl,
-                        // Estrai solo i nutrienti principali per una risposta più pulita
+                        nutritionGrade = p.NutriscoreGrade,
+                        novaGroup = p.NovaGroup,
+                        servingSize = p.ServingSize,
                         nutrition = new
                         {
-                            energyKcal100g = p.Nutriments?.EnergyKcal100g,
-                            proteins100g = p.Nutriments?.Proteins100g,
-                            carbohydrates100g = p.Nutriments?.Carbohydrates100g,
+                            calories100g = p.Nutriments?.EnergyKcal100g,
+                            protein100g = p.Nutriments?.Proteins100g,
+                            carbs100g = p.Nutriments?.Carbohydrates100g,
                             fat100g = p.Nutriments?.Fat100g,
+                            sugar100g = p.Nutriments?.Sugars100g,
                             fiber100g = p.Nutriments?.Fiber100g,
-                            sugars100g = p.Nutriments?.Sugars100g,
+                            salt100g = p.Nutriments?.Salt100g,
                             sodium100g = p.Nutriments?.Sodium100g,
                         },
                         ingredients = p.IngredientsText,
-                        servingSize = p.ServingSize,
-                    }) ?? Array.Empty<object>(),
+                        allergens = p.AllergensTags,
+                    })
+                    .ToList();
+
+                var cleanResponse = new
+                {
+                    query = query,
+                    page = data?.Page ?? pageNumber,
+                    pageSize = pageSize,
+                    totalPages = data?.PageCount ?? 0,
+                    totalResults = data?.Count ?? 0,
+                    country = country,
+                    products = products, // Ora funziona perché products può essere null
                 };
 
-                _logger.LogInformation(
-                    "Successfully fetched {Count} products from OpenFoodFacts for query: {Query}",
-                    data?.Count ?? 0,
-                    query
-                );
-
-                return Ok(response_data);
-            }
-            catch (OperationCanceledException)
-            {
-                _logger.LogError("Timeout occurred while fetching data for query: {Query}", query);
-                return StatusCode(408, "Request timeout");
-            }
-            catch (HttpRequestException ex)
-            {
-                _logger.LogError(ex, "Network error while fetching data for query: {Query}", query);
-                return StatusCode(503, "Service temporarily unavailable");
-            }
-            catch (JsonException ex)
-            {
-                _logger.LogError(ex, "Error parsing JSON response for query: {Query}", query);
-                return StatusCode(502, "Invalid response from food API");
+                return Ok(cleanResponse);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error fetching data for query: {Query}", query);
+                _logger.LogError(ex, "Error fetching data for query: {Query}", query);
                 return StatusCode(500, "Internal server error");
             }
         }

@@ -1,11 +1,39 @@
-import React from "react";
+import React, {useState, useEffect} from "react";
 import Header from "../components/Header";
 import Container from "../components/container";
 import ButtonContainer from "../components/ButtonContainer";
 import { Search, Zap, Clock, ChefHat, Plus } from "lucide-react";
 import FoodCard from "../components/FoodCard";
+import { APIDbHandler } from "../api/APIHandler";
 
 const Food: React.FC = () => {
+
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const searchFood = async (query: string) => {
+    try {
+      const response = await APIDbHandler.SearchFood(query);
+      console.log(response, "Search Results");
+    } catch (error) {
+      console.error("Errore durante la ricerca:", error);
+    }
+  }
+
+  useEffect(() => {
+    const handleKeyDown = async (event: KeyboardEvent) => {
+      if (event.key === "Enter" && searchQuery.trim() !== "") {
+        event.preventDefault();
+        await searchFood(searchQuery);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [searchQuery]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900 p-2 md:p-6">
       <Header />
@@ -29,9 +57,11 @@ const Food: React.FC = () => {
             <div className="flex items-center gap-2 border border-gray-700 rounded-lg p-2 bg-gray-800">
               <Search color="gray" />
               <input
-                className="text-slate-200 text-[18px] "
+                className="text-slate-200 text-[18px] w-full focus:outline-none"
                 type="text"
                 placeholder="Cerca tra migliaia di alimenti"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
           </Container>
