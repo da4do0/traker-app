@@ -127,7 +127,7 @@ namespace Api.Controllers
         public async Task<ActionResult<object>> SearchEu(
             string query,
             [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 10,
+            [FromQuery] int pageSize = 5,
             [FromQuery] string? country = null
         )
         {

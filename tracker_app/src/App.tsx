@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import Food from './pages/Food';
+import FoodDetailPage from './pages/FoodDetailPage';
 import Register from './pages/Register';
 
 const App: React.FC = () => {
@@ -27,6 +28,13 @@ const App: React.FC = () => {
                 element={
                 <ProtectedRoute>
                     <Food />
+                </ProtectedRoute>
+                }/>
+            <Route 
+                path="/food/:id" 
+                element={
+                <ProtectedRoute>
+                    <FoodDetailPage />
                 </ProtectedRoute>
                 }/>
             <Route path="*" element={<NotFound />} />
