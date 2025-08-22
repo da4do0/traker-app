@@ -70,6 +70,7 @@ allergens
 */
   const [quantity, setQuantity] = useState("100");
   const [usernameLocal, setUsernameLocal] = useState("");
+  const [mealType, setMealType] = useState("Lunch");
 
   const { username, setUsername } = useUser();
 
@@ -149,15 +150,15 @@ allergens
       Name: food.name,
       Description: food.categories || "Nessuna descrizione",
       Image: food.imageUrl,
-      Calories: food.nutrition.calories100g || 0,
-      Proteins: food.nutrition.protein100g || 0,
-      Carbohydrates: food.nutrition.carbs100g || 0,
-      Fats: food.nutrition.fat100g || 0,
+      Calories: Math.round(food.nutrition.calories100g || 0),
+      Proteins: Math.round(food.nutrition.protein100g || 0),
+      Carbohydrates: Math.round(food.nutrition.carbs100g || 0),
+      Fats: Math.round(food.nutrition.fat100g || 0),
       code: food.code,
       Username: username || usernameLocal,
       Quantity: parseInt(quantity),
       Date: new Date().toISOString(),
-      Meal: "Lunch",
+      Meal: mealType,
     };
 
     const response = await APIDbHandler.AddFood(foodData);
@@ -202,6 +203,32 @@ allergens
                 <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
                   Score {food?.nutritionGrade}
                 </span>
+              </div>
+            </div>
+
+            {/* Selezione tipo pasto */}
+            <div className="bg-gray-800 rounded-lg p-3">
+              <h3 className="text-white text-sm font-medium mb-2">Tipo di pasto</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: "Breakfast", label: "Colazione", emoji: "🌅" },
+                  { value: "Lunch", label: "Pranzo", emoji: "☀️" },
+                  { value: "Dinner", label: "Cena", emoji: "🌙" },
+                  { value: "snack", label: "Snack", emoji: "🍎" },
+                ].map((meal) => (
+                  <button
+                    key={meal.value}
+                    onClick={() => setMealType(meal.value)}
+                    className={`p-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1 ${
+                      mealType === meal.value
+                        ? "bg-green-600 text-white"
+                        : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                    }`}
+                  >
+                    <span>{meal.emoji}</span>
+                    {meal.label}
+                  </button>
+                ))}
               </div>
             </div>
 
