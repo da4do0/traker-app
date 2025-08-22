@@ -70,8 +70,8 @@ const FoodDetailPage: React.FC = () => {
               <div className="space-y-4">
                 <div className="aspect-square rounded-xl overflow-hidden bg-gray-800">
                   <img
-                    src={food.imageUrl}
-                    alt={food.name}
+                    src={food?.imageUrl}
+                    alt={food?.name}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
@@ -86,14 +86,14 @@ const FoodDetailPage: React.FC = () => {
                     <Award size={20} />
                     <div>
                       <div className="font-bold">Nutri-Score</div>
-                      <div className="text-sm">{food.nutritionGrade.toUpperCase()}</div>
+                      <div className="text-sm">{food?.nutritionGrade?.toUpperCase()}</div>
                     </div>
                   </div>
                   <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${getNovaGroupColor(food.novaGroup)}`}>
                     <Zap size={20} />
                     <div>
                       <div className="font-bold">Nova Group</div>
-                      <div className="text-sm">{food.novaGroup}</div>
+                      <div className="text-sm">{food?.novaGroup}</div>
                     </div>
                   </div>
                 </div>
@@ -103,12 +103,12 @@ const FoodDetailPage: React.FC = () => {
               <div className="space-y-6">
                 {/* Product Info */}
                 <div>
-                  <h1 className="text-3xl font-bold text-white mb-2">{food.name}</h1>
-                  <p className="text-xl text-gray-300 mb-2">{food.brands}</p>
+                  <h1 className="text-3xl font-bold text-white mb-2">{food?.name}</h1>
+                  <p className="text-xl text-gray-300 mb-2">{food?.brands}</p>
                   <div className="flex items-center gap-4 text-sm text-gray-400">
-                    <span>{food.quantity}</span>
+                    <span>{food?.quantity}</span>
                     <span>•</span>
-                    <span>{getMainCategory(food.categories)}</span>
+                    <span>{getMainCategory(food?.categories)}</span>
                   </div>
                 </div>
 
@@ -121,11 +121,11 @@ const FoodDetailPage: React.FC = () => {
                 {/* Quick Stats */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-gray-800/50 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-green-400">{food.nutrition.calories100g}</div>
+                    <div className="text-2xl font-bold text-green-400">{food?.nutrition?.calories100g}</div>
                     <div className="text-sm text-gray-400">kcal per 100g</div>
                   </div>
                   <div className="bg-gray-800/50 rounded-lg p-4 text-center">
-                    <div className="text-lg text-white">{food.servingSize}</div>
+                    <div className="text-lg text-white">{food?.servingSize}</div>
                     <div className="text-sm text-gray-400">Porzione</div>
                   </div>
                 </div>
@@ -144,19 +144,19 @@ const FoodDetailPage: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-gray-800/30 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-blue-400">{food.nutrition.protein100g}g</div>
+                <div className="text-2xl font-bold text-blue-400">{food?.nutrition?.protein100g}g</div>
                 <div className="text-gray-300">Proteine</div>
               </div>
               <div className="bg-gray-800/30 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-orange-400">{food.nutrition.carbs100g}g</div>
+                <div className="text-2xl font-bold text-orange-400">{food?.nutrition?.carbs100g}g</div>
                 <div className="text-gray-300">Carboidrati</div>
               </div>
               <div className="bg-gray-800/30 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-purple-400">{food.nutrition.fat100g}g</div>
+                <div className="text-2xl font-bold text-purple-400">{food?.nutrition?.fat100g}g</div>
                 <div className="text-gray-300">Grassi</div>
               </div>
               <div className="bg-gray-800/30 rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-green-400">{food.nutrition.calories100g}</div>
+                <div className="text-2xl font-bold text-green-400">{food?.nutrition?.calories100g}</div>
                 <div className="text-gray-300">Calorie</div>
               </div>
             </div>
@@ -170,7 +170,7 @@ const FoodDetailPage: React.FC = () => {
               </div>
               <h2 className="text-xl font-semibold text-white">Ingredienti</h2>
             </div>
-            <p className="text-gray-300 leading-relaxed">{food.ingredients}</p>
+            <p className="text-gray-300 leading-relaxed">{food?.ingredients}</p>
           </Container>
 
           {/* Allergens */}
@@ -181,7 +181,7 @@ const FoodDetailPage: React.FC = () => {
               </div>
               <h2 className="text-xl font-semibold text-white">Allergeni</h2>
             </div>
-            <p className="text-gray-300">{formatAllergens(food.allergens)}</p>
+            <p className="text-gray-300">{formatAllergens(food?.allergens)}</p>
           </Container>
 
           {/* Additional Info */}
@@ -194,10 +194,10 @@ const FoodDetailPage: React.FC = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-300">
               <div>
-                <strong>Codice prodotto:</strong> {food.code}
+                <strong>Codice prodotto:</strong> {food?.code}
               </div>
               <div>
-                <strong>Categoria:</strong> {getMainCategory(food.categories)}
+                <strong>Categoria:</strong> {getMainCategory(food?.categories)}
               </div>
             </div>
           </Container>

@@ -7,36 +7,38 @@ import FoodCard from "../components/FoodCard";
 import { APIDbHandler } from "../api/APIHandler";
 import type { FoodDetailProps, FoodDetailHover } from "../interfaces/Food";
 import FoodDetail from "../components/FoodDetail";
+import FoodForm from "../components/FoodForm";
 
 const Food: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [queryFood, setQueryFood] = useState([]);
-  const [foodDetail, setFoodDetail] = useState<FoodDetailHover | null>(null);
+  const [foodForm, setFoodForm] = useState<boolean>(false);
+  const [foodDetailHover, setFoodDetailHover] = useState(null);
 
   const searchFood = async (query: string) => {
     try {
       const response = await APIDbHandler.SearchFood(query);
       console.log(response, "Search Results");
 
-      const formatted = response?.products.map((p: any) => ({
-        code: p.code,
-        name: p.name || "Nome non disponibile",
-        brands: p.brands || "Marca non specificata",
-        quantity: p.quantity || "Quantità non specificata",
-        categories: p.categories || "Sconosciuto",
-        imageUrl: p.imageUrl || "https://via.placeholder.com/150",
-        nutritionGrade: p.nutritionGrade || "N/A",
-        novaGroup: p.novaGroup || 0,
-        servingSize: p.servingSize || "Porzione non specificata",
+      const formatted = response?.products.map((p: FoodDetailProps) => ({
+        code: p?.code,
+        name: p?.name || "Nome non disponibile",
+        brands: p?.brands || "Marca non specificata",
+        quantity: p?.quantity || "Quantità non specificata",
+        categories: p?.categories || "Sconosciuto",
+        imageUrl: p?.imageUrl || "https://via.placeholder.com/150",
+        nutritionGrade: p?.nutritionGrade || "N/A",
+        novaGroup: p?.novaGroup || 0,
+        servingSize: p?.servingSize || "Porzione non specificata",
         nutrition: {
-          calories100g: p.nutrition?.calories100g ?? 0,
-          protein100g: p.nutrition?.protein100g ?? 0,
-          carbs100g: p.nutrition?.carbs100g ?? 0,
-          fat100g: p.nutrition?.fat100g ?? 0,
+          calories100g: p?.nutrition?.calories100g ?? 0,
+          protein100g: p?.nutrition?.protein100g ?? 0,
+          carbs100g: p?.nutrition?.carbs100g ?? 0,
+          fat100g: p?.nutrition?.fat100g ?? 0,
         },
         ingredients: p.ingredients || "Ingredienti non specificati",
         allergens: p.allergens || [],
-        onDetail: (food: FoodDetailProps) => handleFoodDetail(food),
+        handleFoodHover: handleFoodHover,
       }));
 
       setQueryFood(formatted);
@@ -45,13 +47,10 @@ const Food: React.FC = () => {
     }
   };
 
-  const handleFoodDetail = (food: FoodDetailProps) => {
-    setFoodDetail(food);
-  };
-
-  useEffect(() => {
-    console.log(queryFood, "queryFood");
-  }, [searchQuery]);
+  const handleFoodHover = (food: any) => {
+    console.log("Food hovered:", food);
+    setFoodDetailHover(food);
+  }
 
   useEffect(() => {
     const handleKeyDown = async (event: KeyboardEvent) => {
@@ -206,6 +205,11 @@ const Food: React.FC = () => {
           </ButtonContainer>
         </Container>
       </main>
+      {foodDetailHover && (
+        <div className="absolute left-0 top-0 w-full h-full flex items-center justify-center z-50 backdrop-blur-xs">
+          <FoodForm food={foodDetailHover} back={handleFoodHover}/>
+        </div>
+      )}
     </div>
   );
 };

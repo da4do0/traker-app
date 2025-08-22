@@ -122,7 +122,7 @@ namespace Api.Migrations
                     b.Property<int>("Proteins")
                         .HasColumnType("int");
 
-                    b.Property<string>("User")
+                    b.Property<string>("code")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -221,7 +221,40 @@ namespace Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("FoodId");
+
+                    b.HasIndex("UserId");
+
                     b.ToTable("UserFoods");
+                });
+
+            modelBuilder.Entity("Api.model.UserFood", b =>
+                {
+                    b.HasOne("Api.model.Food", "Food")
+                        .WithMany("UserFoods")
+                        .HasForeignKey("FoodId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Api.model.User", "User")
+                        .WithMany("UserFoods")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Food");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Api.model.Food", b =>
+                {
+                    b.Navigation("UserFoods");
+                });
+
+            modelBuilder.Entity("Api.model.User", b =>
+                {
+                    b.Navigation("UserFoods");
                 });
 #pragma warning restore 612, 618
         }

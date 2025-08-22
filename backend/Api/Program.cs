@@ -1,10 +1,15 @@
 using Microsoft.EntityFrameworkCore;
+using Api.Interfaces;
+using Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddDbContext<Api.ApiDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Register services
+builder.Services.AddScoped<IFoodService, FoodService>();
 
 builder.Services.AddHttpClient();
 

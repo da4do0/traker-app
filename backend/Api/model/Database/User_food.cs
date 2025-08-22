@@ -8,6 +8,11 @@ namespace Api.model
         public int Quantity { get; set; }
         public DateTime Date { get; set; }
         public MealType Meal { get; set; }
+
+        // Navigation properties per le relazioni
+        public virtual User User { get; set; } = null!;
+        public virtual Food Food { get; set; } = null!;
+
         public enum MealType
         {
             Breakfast,

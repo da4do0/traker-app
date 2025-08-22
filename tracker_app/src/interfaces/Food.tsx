@@ -23,7 +23,7 @@ export interface FoodDetailProps {
   ingredients: string;
   allergens: string[];
   onAdd?: () => void;
-  onDetail: (food: FoodDetailHover) => void; // Funzione per gestire il click su "Dettagli"
+  handleFoodHover: (food: any) => void; // Funzione per gestire il click su "Dettagli"
 }
 
 export interface FoodDetailHover {

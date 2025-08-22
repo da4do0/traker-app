@@ -13,5 +13,7 @@ namespace Api.model
         public float Weight { get; set; }
         public float Height { get; set; }
 
+        // Navigation property per la relazione N:N con Food
+        public virtual ICollection<UserFood> UserFoods { get; set; } = new List<UserFood>();
     }
 }

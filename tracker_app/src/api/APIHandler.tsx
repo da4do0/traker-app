@@ -27,6 +27,12 @@ const CALLS = [
     endpoint: "food/search/eu/",
     isAuthenticated: false,
   },
+  {
+    name: "AddFood",
+    method: "POST",
+    endpoint: "food/add",
+    isAuthenticated: false,
+  },
 ];
 
 export class APIDbHandler {
@@ -218,6 +224,23 @@ export class APIDbHandler {
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(errorText || "Errore durante la ricerca del cibo");
+    }
+    return response.json();
+  }
+
+  static async AddFood(food: any) {
+    let call = this.getCall("AddFood");
+    if (!call) throw new Error("Call AddFood not found");
+    const response = await fetch(endpointAPI + call.endpoint, {
+      method: call.method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(food),
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || "Errore durante l'aggiunta del cibo");
     }
     return response.json();
   }

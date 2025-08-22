@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Api.model;
+using Api.Interfaces;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,6 +13,7 @@ namespace Api.Controllers
     public class FoodController : ControllerBase
     {
         private readonly ApiDbContext _context;
+        private readonly IFoodService _foodService;
         private readonly ILogger<FoodController> _logger;
         private readonly IConfiguration _configuration;
         private readonly HttpClient _httpClient;
@@ -20,12 +22,14 @@ namespace Api.Controllers
 
         public FoodController(
             ApiDbContext context,
+            IFoodService foodService,
             ILogger<FoodController> logger,
             HttpClient httpClient,
             IConfiguration configuration
         )
         {
             _context = context;
+            _foodService = foodService;
             _logger = logger;
             _httpClient = httpClient;
             _configuration = configuration;
@@ -239,6 +243,112 @@ namespace Api.Controllers
                 _logger.LogError(ex, "Error fetching data for query: {Query}", query);
                 return StatusCode(500, "Internal server error");
             }
+        }
+
+        [HttpPost("add")]
+        public async Task<IActionResult> AddFood([FromBody] FoodApi food)
+        {
+            if (food == null)
+            {
+                return BadRequest("Food data is required");
+            }
+
+            try
+            {
+                // Get user ID from username
+                var userId = _context.Users
+                    .Where(u => u.Username == food.Username)
+                    .Select(u => u.Id)
+                    .FirstOrDefault();
+
+                if (userId == 0)
+                {
+                    return BadRequest("User not found");
+                }
+
+                // Check if food exists by code
+                var existingFood = await _foodService.GetFoodByCodeAsync(food.code);
+                
+                int foodId;
+                if (existingFood != null)
+                {
+                    foodId = existingFood.Id;
+                }
+                else
+                {
+                    // Create new food
+                    var newFood = new Food
+                    {
+                        Name = food.Name,
+                        Description = food.Description,
+                        Image = food.Image,
+                        Calories = food.Calories,
+                        Proteins = food.Proteins,
+                        Carbohydrates = food.Carbohydrates,
+                        Fats = food.Fats,
+                        code = food.code
+                    };
+                    
+                    var createdFood = await _foodService.CreateFoodAsync(newFood);
+                    foodId = createdFood.Id;
+                }
+
+                // Add food to user using service (Meal is already a string)
+                var result = await _foodService.AddFoodToUserAsync(userId, foodId, food.Quantity, food.Meal);
+                
+                if (!result)
+                {
+                    return BadRequest("Failed to add food to user");
+                }
+
+                return Ok("Food added successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding food");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+        // Aggiungo nuovi endpoint che usano il service
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Food>>> GetAllFoods()
+        {
+            var foods = await _foodService.GetAllFoodsAsync();
+            return Ok(foods);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Food>> GetFood(int id)
+        {
+            var food = await _foodService.GetFoodByIdAsync(id);
+            if (food == null)
+            {
+                return NotFound();
+            }
+            return Ok(food);
+        }
+
+        [HttpPost("add-to-user")]
+        public async Task<ActionResult> AddFoodToUser(
+            [FromQuery] int userId, 
+            [FromQuery] int foodId, 
+            [FromQuery] int quantity, 
+            [FromQuery] string mealType)
+        {
+            var result = await _foodService.AddFoodToUserAsync(userId, foodId, quantity, mealType);
+            
+            if (!result)
+                return BadRequest("Invalid meal type or user/food not found");
+                
+            return Ok("Food added to user successfully");
+        }
+
+        [HttpGet("user/{userId}")]
+        public async Task<ActionResult<IEnumerable<UserFood>>> GetUserFoods(int userId)
+        {
+            var userFoods = await _foodService.GetUserFoodsAsync(userId);
+            return Ok(userFoods);
         }
     }
 }

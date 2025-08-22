@@ -17,7 +17,7 @@ const FoodDetail: React.FC<FoodDetailProps> = ({
   ingredients,
   allergens,
   onAdd,
-  onDetail,
+  handleFoodHover,
 }) => {
   const navigate = useNavigate();
 
@@ -37,8 +37,8 @@ const FoodDetail: React.FC<FoodDetailProps> = ({
           nutrition,
           ingredients,
           allergens,
-        }
-      }
+        },
+      },
     });
   };
   // Funzione per ottenere il colore del nutrition grade
@@ -121,14 +121,6 @@ const FoodDetail: React.FC<FoodDetailProps> = ({
               </h3>
               <p className="text-gray-400 text-sm">{brands}</p>
             </div>
-            {onAdd && (
-              <button
-                onClick={onAdd}
-                className="bg-green-600 hover:bg-green-700 transition-colors rounded-lg p-2 flex-shrink-0 ml-2"
-              >
-                <Plus className="w-4 h-4 text-white" />
-              </button>
-            )}
           </div>
 
           {/* Valori nutrizionali */}
@@ -164,6 +156,29 @@ const FoodDetail: React.FC<FoodDetailProps> = ({
               Nova: {novaGroup}
             </span>
           </div>
+        </div>
+
+        <div
+          className=" bg-green-600 hover:bg-green-700 transition-colors rounded-lg p-2 flex items-center justify-center gap-2"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleFoodHover({
+              code,
+              name,
+              brands,
+              quantity,
+              categories,
+              imageUrl,
+              nutritionGrade,
+              novaGroup,
+              servingSize,
+              nutrition,
+              ingredients,
+              allergens,
+            });
+          }}
+        >
+          <Plus size={20} className="text-white" />
         </div>
       </div>
     </div>
