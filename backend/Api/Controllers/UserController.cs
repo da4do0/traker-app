@@ -132,7 +132,10 @@ namespace Api.Controllers
             return Ok(
                 new
                 {
-                    username = user.Username,
+                    userInfo = new
+                    {
+                        user.Weight
+                    },
                     data = new
                     {
                         registra,
