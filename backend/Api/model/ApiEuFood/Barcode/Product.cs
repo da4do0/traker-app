@@ -37,6 +37,9 @@ namespace Api.model
         [JsonPropertyName("ingredients_text")]
         public string? IngredientsText { get; set; }
 
+        [JsonPropertyName("ingredients")]
+        public List<Ingredient_api>? Ingredients { get; set; }
+
         [JsonPropertyName("allergens_tags")]
         public List<string>? AllergensTags { get; set; }
     }

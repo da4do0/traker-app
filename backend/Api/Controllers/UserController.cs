@@ -134,7 +134,7 @@ namespace Api.Controllers
                 {
                     userInfo = new
                     {
-                        user.Weight
+                        weight = user.Misurations.OrderByDescending(m => m.Date).FirstOrDefault()?.Weight ?? 0
                     },
                     data = new
                     {

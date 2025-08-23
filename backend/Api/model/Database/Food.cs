@@ -14,5 +14,6 @@ namespace Api.model
 
         // Navigation property per la relazione N:N con User
         public virtual ICollection<UserFood> UserFoods { get; set; } = new List<UserFood>();
+        public virtual ICollection<FoodIngredient> FoodIngredients { get; set; } = new List<FoodIngredient>();
     }
 }
