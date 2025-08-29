@@ -33,6 +33,12 @@ const CALLS = [
     endpoint: "food/add",
     isAuthenticated: false,
   },
+  {
+    name: "Calories",
+    method: "GET",
+    endpoint: "food/calories/",
+    isAuthenticated: false,
+  },
 ];
 
 export class APIDbHandler {
@@ -40,7 +46,7 @@ export class APIDbHandler {
     return CALLS.find((call) => call.name === name);
   }
 
-  static async login(username: string, password: string, device_uuid: string) {
+  static async login(username: string, password: string) {
     const call = this.getCall("Login");
     let endpoint = call?.endpoint ? call.endpoint : "";
     let method = call?.method ? call.method : "";
@@ -56,8 +62,6 @@ export class APIDbHandler {
         body: JSON.stringify({
           user: username,
           password: password,
-          idApplicazione: "0.0.1",
-          idDispositivo: device_uuid,
         }),
       });
       if (response.ok) {
@@ -241,6 +245,22 @@ export class APIDbHandler {
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(errorText || "Errore durante l'aggiunta del cibo");
+    }
+    return response.json();
+  }
+
+  static async GetCalories(userId: number) {
+    let call = this.getCall("Calories");
+    if (!call) throw new Error("Call Calories not found");
+    const response = await fetch(endpointAPI + call.endpoint + userId, {
+      method: call.method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || "Errore durante il calcolo delle calorie");
     }
     return response.json();
   }

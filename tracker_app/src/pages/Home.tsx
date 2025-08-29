@@ -18,6 +18,8 @@ import { useNavigate } from "react-router-dom";
 
 const Home: React.FC = () => {
   const [weight, setWeight] = useState("");
+  const [calories, setCalories] = useState(0);
+  const [totalCalories, setTotalCalories] = useState(0);
   const { username, setUsername } = useUser();
   const navigate = useNavigate();
 
@@ -26,7 +28,7 @@ const Home: React.FC = () => {
     return storedUsername ? true : false;
   };
 
-  const getIfnoUser = async (username: string) => {
+  const getInfoUser = async (username: string) => {
     try {
       console.log("Fetching user info for:", username);
       const response = await APIDbHandler.InfoUser(username);
@@ -40,17 +42,44 @@ const Home: React.FC = () => {
     }
   };
 
+  const getCalories = async (userId: number) => {
+    try {
+      const response = await APIDbHandler.GetCalories(userId);
+      console.log(response, "Calories Info");
+      setCalories(response);
+    } catch (error) {
+      console.error("Errore durante il recupero delle calorie:", error);
+    }
+  };
+
+  const calcPercentCalories = (calories: number, totalCalories: number) => {
+    if (totalCalories === 0) return 0; 
+    return (calories / totalCalories) * 100;
+  }
+
+  useEffect(() => {
+  const fetchData = async () => {
+    try {
+      await getCalories(1);
+    } catch (error) {
+      console.error('Errore nel caricamento calorie:', error);
+    }
+  };
+  
+  fetchData();
+}, []);
+
   useEffect(() => {
     if (!username && !checkLocalUsername()) {
       navigate("/login");
     } else if (username) {
       localStorage.setItem("username", username);
-      getIfnoUser(username);
+      getInfoUser(username);
     } else {
       const storedUsername = localStorage.getItem("username");
       setUsername(storedUsername || "");
       if (storedUsername) {
-        getIfnoUser(storedUsername);
+        getInfoUser(storedUsername);
       }
     }
   }, [username]);
@@ -92,10 +121,10 @@ const Home: React.FC = () => {
             <Utensils className="w-5 h-5" />
             Nutrizione Oggi
             <span className="ml-auto text-xs text-gray-400 font-normal">
-              0%
+              {calcPercentCalories(calories, totalCalories)}%
             </span>
           </div>
-          <div className="text-3xl font-bold text-white">0</div>
+          <div className="text-3xl font-bold text-white">{calories}</div>
           <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
             <div
               className="h-full bg-red-500 rounded-full"

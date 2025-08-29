@@ -268,7 +268,7 @@ namespace Api.Controllers
 
                 // Check if food exists by code
                 var existingFood = await _foodService.GetFoodByCodeAsync(food.code);
-                
+
                 int foodId;
                 if (existingFood != null)
                 {
@@ -288,14 +288,14 @@ namespace Api.Controllers
                         Fats = food.Fats,
                         code = food.code
                     };
-                    
+
                     var createdFood = await _foodService.CreateFoodAsync(newFood);
                     foodId = createdFood.Id;
                 }
 
                 // Add food to user using service (Meal is already a string)
                 var result = await _foodService.AddFoodToUserAsync(userId, foodId, food.Quantity, food.Meal);
-                
+
                 if (!result)
                 {
                     return BadRequest("Failed to add food to user");
@@ -331,24 +331,25 @@ namespace Api.Controllers
 
         [HttpPost("add-to-user")]
         public async Task<ActionResult> AddFoodToUser(
-            [FromQuery] int userId, 
-            [FromQuery] int foodId, 
-            [FromQuery] int quantity, 
+            [FromQuery] int userId,
+            [FromQuery] int foodId,
+            [FromQuery] int quantity,
             [FromQuery] string mealType)
         {
             var result = await _foodService.AddFoodToUserAsync(userId, foodId, quantity, mealType);
-            
+
             if (!result)
                 return BadRequest("Invalid meal type or user/food not found");
-                
+
             return Ok("Food added to user successfully");
         }
 
-        [HttpGet("user/{userId}")]
+        [HttpGet("calories/{userId}")]
         public async Task<ActionResult<IEnumerable<UserFood>>> GetUserFoods(int userId)
         {
-            var userFoods = await _foodService.GetUserFoodsAsync(userId);
-            return Ok(userFoods);
+            var calories = await _foodService.GetUserCaloriesAsync(userId);
+            return Ok(calories);
         }
+        
     }
 }

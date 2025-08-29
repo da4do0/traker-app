@@ -75,7 +75,7 @@ namespace Api.Services
         public async Task<IEnumerable<Food>> SearchFoodsAsync(string searchTerm)
         {
             return await _context.Foods
-                .Where(f => f.Name.Contains(searchTerm) || 
+                .Where(f => f.Name.Contains(searchTerm) ||
                            f.Description.Contains(searchTerm) ||
                            f.code.Contains(searchTerm))
                 .Include(f => f.UserFoods)
@@ -90,7 +90,7 @@ namespace Api.Services
             {
                 return false; // Invalid meal type
             }
-            
+
             return await AddFoodToUserAsync(userId, foodId, quantity, parsedMealType);
         }
 
@@ -98,7 +98,7 @@ namespace Api.Services
         {
             var user = await _context.Users.FindAsync(userId);
             var food = await _context.Foods.FindAsync(foodId);
-            
+
             if (user == null || food == null) return false;
 
             var userFood = new UserFood
@@ -143,6 +143,16 @@ namespace Api.Services
             _context.UserFoods.Remove(userFood);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<Object> GetUserCaloriesAsync(int userId)
+        {
+            var totalCalories = await _context.UserFoods
+            .Include(uf => uf.Food)     // carica la relazione con Foods
+            .Include(uf => uf.User)     // carica la relazione con Users
+            .SumAsync(uf => (uf.Food.Calories * uf.Quantity) / 100.0);
+
+            return totalCalories;
         }
     }
 }

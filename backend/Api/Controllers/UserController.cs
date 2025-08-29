@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using Api.model;
+using Api.Services;
 using BCrypt.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -36,6 +38,23 @@ namespace Api.Controllers
             return Ok(exists);
         }
 
+        [HttpPost("login")]
+        public ActionResult<User> Login([FromBody] User loginUser)
+        {
+            if (loginUser == null || loginUser.Username == null || loginUser.Password == null)
+            {
+                return BadRequest("Username or password is null");
+            }
+
+            var user = _context.Users.FirstOrDefault(u => u.Username == loginUser.Username);
+            if (user == null || !BCrypt.Net.BCrypt.Verify(loginUser.Password, user.Password))
+            {
+                return Unauthorized("Invalid username or password");
+            }
+
+            return Ok(user);
+        }
+
         // GET /user/id/
         [HttpGet("id/{username}")]
         public ActionResult<int> GetUserId(string username)
@@ -50,7 +69,7 @@ namespace Api.Controllers
 
         // POST /user
         [HttpPost]
-        public ActionResult<User> Create(User user)
+        public ActionResult<User> Create(User user, [FromServices] ICalorieCalculationService calorieService)
         {
             if (user == null)
             {
@@ -73,9 +92,19 @@ namespace Api.Controllers
             }
 
             user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
+            user.CreatedAt = DateTime.UtcNow;
+            user.UpdatedAt = DateTime.UtcNow;
 
             _context.Users.Add(user);
             _context.SaveChanges();
+
+            // Calculate daily calorie goal if misuration data exists
+            if (user.Misurations != null && user.Misurations.Any())
+            {
+                user.DailyCalorieGoal = calorieService.CalculateDailyCalories(user);
+                _context.SaveChanges();
+            }
+
             return Ok(user);
         }
 
@@ -144,5 +173,65 @@ namespace Api.Controllers
                 }
             );
         }
+
+        // POST /user/recalculate-calories/{username}
+        [HttpPost("recalculate-calories/{username}")]
+        public async Task<ActionResult<int>> RecalculateCalories(string username, [FromServices] ICalorieCalculationService calorieService)
+        {
+            var user = _context.Users
+                .Where(u => u.Username == username)
+                .FirstOrDefault();
+
+            if (user == null)
+                return NotFound("User not found");
+
+            try
+            {
+                var newCalorieGoal = await calorieService.CalculateDailyCaloriesAsync(user.Id, _context);
+                user.DailyCalorieGoal = newCalorieGoal;
+                user.UpdatedAt = DateTime.UtcNow;
+                _context.SaveChanges();
+
+                return Ok(newCalorieGoal);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error calculating calories: {ex.Message}");
+            }
+        }
+
+        // PUT /user/goals/{username}
+        [HttpPut("goals/{username}")]
+        public async Task<ActionResult> UpdateUserGoals(string username, [FromBody] UserGoalsUpdate goals, [FromServices] ICalorieCalculationService calorieService)
+        {
+            var user = _context.Users.FirstOrDefault(u => u.Username == username);
+            if (user == null)
+                return NotFound("User not found");
+
+            user.ActivityLevel = goals.ActivityLevel;
+            user.WeightGoal = goals.WeightGoal;
+            user.TargetWeight = goals.TargetWeight;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            // Recalculate calories with new goals
+            try
+            {
+                user.DailyCalorieGoal = await calorieService.CalculateDailyCaloriesAsync(user.Id, _context);
+            }
+            catch (Exception)
+            {
+                // Keep existing calorie goal if calculation fails
+            }
+
+            _context.SaveChanges();
+            return Ok(new { DailyCalorieGoal = user.DailyCalorieGoal });
+        }
+    }
+
+    public class UserGoalsUpdate
+    {
+        public ActivityLevel ActivityLevel { get; set; }
+        public WeightGoal WeightGoal { get; set; }
+        public float? TargetWeight { get; set; }
     }
 }
