@@ -1,9 +1,7 @@
-import React, { useState, useMemo, useCallback, useEffect, use } from "react";
+import React, { useState, useMemo, useCallback, useEffect} from "react";
 import Container from "./container";
-import ButtonContainer from "./ButtonContainer";
-import Input from "./input";
 import { APIDbHandler } from "../api/APIHandler";
-import { Calculator, Info, X, Utensils, Plus, Minus } from "lucide-react";
+import { X, Utensils, Plus, Minus } from "lucide-react";
 import {useUser} from "../hooks/UserInfo";
 
 // TypeScript interfaces
@@ -33,41 +31,8 @@ interface FoodFormProps {
   back: (arg: any) => void; 
 }
 
-/* const DEFAULT_FOOD: Food = {
-  name: "Pasta integrale",
-  brands: "Barilla",
-  categories: "Cereali e derivati",
-  imageUrl:
-    "https://media.istockphoto.com/id/1144823591/nl/foto/spaghetti-in-een-schotel-op-een-witte-achtergrond.jpg?s=2048x2048&w=is&k=20&c=QaMEiwelKScNJa4g5hg7wZrAOhHUHUbrVPOYmJFRMyc=",
-  nutritionGrade: "A",
-  novaGroup: "1",
-  servingSize: "80g",
-  nutrition100g: {
-    calories: 350,
-    protein: 12.5,
-    carbs: 65,
-    fat: 2.5,
-  },
-  ingredients: "Farina di grano duro integrale, acqua",
-  allergens: "Glutine",
-}; */
-
 const FoodForm: React.FC<FoodFormProps> = ({food, back}) => {
 
-  /* 
-  
-  name,
-brands,
-categories,
-imageUrl,
-nutritionGrade,
-novaGroup,
-servingSize,
-nutrition100g,
-ingredients,
-allergens
-
-*/
   const [quantity, setQuantity] = useState("100");
   const [usernameLocal, setUsernameLocal] = useState("");
   const [mealType, setMealType] = useState("Lunch");
@@ -162,7 +127,10 @@ allergens
     };
 
     const response = await APIDbHandler.AddFood(foodData);
-    console.log("AddFood response:", response);
+    if(response){
+      console.log("Food added successfully");
+      back(null);
+    }
   }
 
   return (

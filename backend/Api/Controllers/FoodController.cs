@@ -301,7 +301,10 @@ namespace Api.Controllers
                     return BadRequest("Failed to add food to user");
                 }
 
-                return Ok("Food added successfully");
+                return Ok(new
+                {
+                    msg = "Food added successfully"
+                });
             }
             catch (Exception ex)
             {

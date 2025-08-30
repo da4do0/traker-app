@@ -119,7 +119,10 @@ const Food: React.FC = () => {
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FoodCard
+
+              <span className=" text-white">In arrivo</span>
+
+              {/* <FoodCard
                 name="Petto di Pollo"
                 type="Proteine"
                 typeColor="red"
@@ -172,7 +175,7 @@ const Food: React.FC = () => {
                 protein={10}
                 carbs={3.6}
                 fat={0.4}
-              />
+              /> */}
             </div>
           </Container>
         </div>
