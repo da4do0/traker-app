@@ -8,6 +8,7 @@ using BCrypt.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using model.DTOs.Auth;
+using model.DTOs.User;
 
 namespace Api.Controllers
 {
@@ -71,7 +72,7 @@ namespace Api.Controllers
 
         // POST /user
         [HttpPost]
-        public ActionResult<User> Create(User user, [FromServices] ICalorieCalculationService calorieService)
+        public ActionResult<User> Create(RegisterRequest user, [FromServices] ICalorieCalculationService calorieService)
         {
             if (user == null)
             {
@@ -97,13 +98,42 @@ namespace Api.Controllers
             user.CreatedAt = DateTime.UtcNow;
             user.UpdatedAt = DateTime.UtcNow;
 
-            _context.Users.Add(user);
+            _context.Users.Add(new User
+            {
+                Username = user.Username,
+                Nome = user.Nome,
+                Cognome = user.Cognome,
+                Email = user.Email,
+                Password = user.Password,
+                sex = user.Sex,
+                DateOfBirth = user.DateOfBirth,
+                ActivityLevel = user.ActivityLevel,
+                WeightGoal = user.WeightGoal,
+                TargetWeight = user.TargetWeight,
+                DailyCalorieGoal = user.DailyCalorieGoal,
+                CreatedAt = user.CreatedAt,
+                UpdatedAt = user.UpdatedAt
+            });
+            // Calcola IMC e FFMI
+            float imc = user.Weight / (user.Height * user.Height);
+            float ffmi = user.Weight / (user.Height * user.Height) * 100; // Formula semplificata, puoi personalizzarla
+            
+            _context.Misurations.Add(new Misuration
+            {
+                UserId = _context.Users.FirstOrDefault(u => u.Username == user.Username).Id,
+                Date = _context.Users.FirstOrDefault(u => u.Username == user.Username).CreatedAt,
+                Weight = user.Weight,
+                Height = user.Height,
+                IMC = imc,
+                FFMI = ffmi,
+            });
             _context.SaveChanges();
 
-            // Calculate daily calorie goal if misuration data exists
-            if (user.Misurations != null && user.Misurations.Any())
+            // Recupera l'utente appena creato dal database
+            var createdUser = _context.Users.FirstOrDefault(u => u.Username == user.Username);
+            if (createdUser != null)
             {
-                user.DailyCalorieGoal = calorieService.CalculateDailyCalories(user);
+                createdUser.DailyCalorieGoal = calorieService.CalculateDailyCalories(createdUser);
                 _context.SaveChanges();
             }
 
@@ -111,11 +141,11 @@ namespace Api.Controllers
         }
 
         // GET /user/info/{username}
-        [HttpGet("info/{username}")]
-        public ActionResult<Object> GetUserInfo(string username)
+        [HttpGet("info/{userId}")]
+        public ActionResult<InfoUserResponse> GetUserInfo(int userId)
         {
-            _logger.LogInformation($"Fetching user info for: {username}");
-            var user = _context.Users.FirstOrDefault(u => u.Username == username);
+            _logger.LogInformation($"Fetching user info for: {userId}");
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
             if (user == null)
             {
                 return NotFound("User not found");
@@ -165,7 +195,13 @@ namespace Api.Controllers
                 {
                     userInfo = new
                     {
-                        weight = user.Misurations.OrderByDescending(m => m.Date).FirstOrDefault()?.Weight ?? 0
+                        weight = _context.Misurations
+                            .Where(m => m.UserId == user.Id)
+                            .OrderByDescending(m => m.Date)
+                            .Select(m => m.Weight)
+                            .FirstOrDefault(),
+                        dailyCalorieGoal = user.DailyCalorieGoal,
+                        weightGoal = user.WeightGoal.ToString(),
                     },
                     data = new
                     {

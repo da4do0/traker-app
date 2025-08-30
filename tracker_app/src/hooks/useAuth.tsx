@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { APIDbHandler } from "../api/APIHandler";
+import { useUser } from './UserInfo';
 
 interface User {
   email: string;
@@ -8,14 +9,20 @@ interface User {
 
 export const useAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [userId, setUserId] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [userId, setUserId] = useState<number | null>(null);
+  const [username, setUsername] = useState<string>('');
 
   useEffect(() => {
     const checkAuth = () => {
       const storedAuth = localStorage.getItem('isAuthenticated');
+      const storedUserId = localStorage.getItem('userId');
+      const storedUsername = localStorage.getItem('username');
+      
       if (storedAuth === 'true') {
         setIsAuthenticated(true);
+        if (storedUserId) setUserId(parseInt(storedUserId));
+        if (storedUsername) setUsername(storedUsername);
       }
       setLoading(false);
     };
@@ -23,13 +30,16 @@ export const useAuth = () => {
     checkAuth();
   }, []);
 
-  const login = async (username: string, password: string): Promise<boolean> => {
-    const response = await APIDbHandler.login(username, password);
+  const login = async (usernameInput: string, password: string): Promise<boolean> => {
+    const response = await APIDbHandler.login(usernameInput, password);
     if (response) {
       console.log(response);
       setUserId(response);
+      setUsername(usernameInput);
       setIsAuthenticated(true);
       localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('userId', response.toString());
+      localStorage.setItem('username', usernameInput);
       return true;
     }
     return false;
@@ -37,15 +47,18 @@ export const useAuth = () => {
 
   const logout = () => {
     localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('user');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('username');
     setIsAuthenticated(false);
     setUserId(null);
+    setUsername('');
   };
 
   return {
     isAuthenticated,
-    userId,
     loading,
+    userId,
+    username,
     login,
     logout
   };

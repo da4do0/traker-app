@@ -16,11 +16,10 @@ const Login: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError("");
-        //todo: rimuovere questo
         if (await login(username, password)) {
             navigate("/");
         } else {
-            setError("Credenziali non valide. Usa admin@example.com / password");
+            setError("Credenziali non valide");
         } 
     }
 

@@ -12,7 +12,7 @@ import { Route } from "react-router-dom";
 import Container from "../components/container";
 import ButtonContainer from "../components/ButtonContainer";
 import Header from "../components/Header";
-import { useUser } from "../hooks/UserInfo";
+import { useAuth } from "../hooks/useAuth";
 import { APIDbHandler } from "../api/APIHandler";
 import { useNavigate } from "react-router-dom";
 
@@ -20,20 +20,18 @@ const Home: React.FC = () => {
   const [weight, setWeight] = useState("");
   const [calories, setCalories] = useState(0);
   const [totalCalories, setTotalCalories] = useState(0);
-  const { username, setUsername } = useUser();
+  const { username, userId, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
 
-  const checkLocalUsername = () => {
-    const storedUsername = localStorage.getItem("username");
-    return storedUsername ? true : false;
-  };
-
-  const getInfoUser = async (username: string) => {
+  const getInfoUser = async () => {
     try {
-      console.log("Fetching user info for:", username);
-      const response = await APIDbHandler.InfoUser(username);
-      setWeight(response?.userInfo?.weight);
-      console.log(response, "User Info");
+      console.log("Fetching user info for:", userId);
+      if (userId) {
+        const response = await APIDbHandler.InfoUser(userId);
+        setWeight(response?.userInfo?.weight);
+        setTotalCalories(response?.userInfo?.dailyCalorieGoal);
+        console.log(response, "User Info");
+      }
     } catch (error) {
       console.error(
         "Errore durante il recupero delle informazioni utente:",
@@ -42,47 +40,36 @@ const Home: React.FC = () => {
     }
   };
 
-  const getCalories = async (userId: number) => {
-    try {
-      const response = await APIDbHandler.GetCalories(userId);
-      console.log(response, "Calories Info");
-      setCalories(response);
-    } catch (error) {
-      console.error("Errore durante il recupero delle calorie:", error);
-    }
-  };
-
   const calcPercentCalories = (calories: number, totalCalories: number) => {
-    if (totalCalories === 0) return 0; 
+    if (totalCalories === 0) return 0;
     return (calories / totalCalories) * 100;
-  }
-
-  useEffect(() => {
-  const fetchData = async () => {
-    try {
-      await getCalories(1);
-    } catch (error) {
-      console.error('Errore nel caricamento calorie:', error);
-    }
   };
-  
-  fetchData();
-}, []);
 
   useEffect(() => {
-    if (!username && !checkLocalUsername()) {
-      navigate("/login");
-    } else if (username) {
-      localStorage.setItem("username", username);
-      getInfoUser(username);
-    } else {
-      const storedUsername = localStorage.getItem("username");
-      setUsername(storedUsername || "");
-      if (storedUsername) {
-        getInfoUser(storedUsername);
+    const fetchData = async () => {
+      try {
+        await getInfoUser();
+      } catch (error) {
+        console.error("Errore nel caricamento calorie:", error);
       }
+    };
+
+    if (userId !== null) fetchData();
+  }, [userId]);
+
+  useEffect(() => {
+    console.log(
+      "Auth state - isAuthenticated:",
+      isAuthenticated,
+      "loading:",
+      loading,
+      "userId:",
+      userId
+    );
+    if (!loading && !isAuthenticated) {
+      navigate("/login");
     }
-  }, [username]);
+  }, [isAuthenticated, loading, navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900 p-2 md:p-6">
@@ -132,7 +119,7 @@ const Home: React.FC = () => {
             ></div>
           </div>
           <div className="text-xs text-gray-400 flex justify-between">
-            <span>di 2456 kcal</span>
+            <span>di {totalCalories} kcal</span>
           </div>
           <div className="flex flex-col items-center mt-2">
             <span className="text-gray-400 text-sm mb-2">

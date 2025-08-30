@@ -202,10 +202,10 @@ export class APIDbHandler {
     return response.json();
   }
 
-  static async InfoUser(username: string) {
+  static async InfoUser(userId: number) {
     let call = this.getCall("InfoUser");
     if (!call) throw new Error("Call InfoUser not found");
-    const response = await fetch(endpointAPI + call.endpoint + username, {
+    const response = await fetch(endpointAPI + call.endpoint + userId, {
       method: call.method,
       headers: {
         "Content-Type": "application/json",
