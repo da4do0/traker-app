@@ -13,11 +13,11 @@ const Login: React.FC = () => {
     const navigate = useNavigate()
     const { login } = useAuth()
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError("");
         //todo: rimuovere questo
-        if (login("admin@example.com", "password")) {
+        if (await login(username, password)) {
             navigate("/");
         } else {
             setError("Credenziali non valide. Usa admin@example.com / password");

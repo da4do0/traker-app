@@ -15,8 +15,8 @@ import {
 } from "lucide-react";
 import DateInput from "../components/DateInput";
 import Input from "../components/input";
-import type { Sex, ActivityLevel, WeightGoal } from "../interfaces/User";
-import { ActivityLevel as ActivityLevelEnum, WeightGoal as WeightGoalEnum } from "../interfaces/User";
+import type { Sex, ActivityLevel, WeightGoal } from "../types/User";
+import { ActivityLevel as ActivityLevelEnum, WeightGoal as WeightGoalEnum } from "../types/User";
 import { APIDbHandler } from "../api/APIHandler";
 import RadioGroup from "../components/RadioGroup";
 import FlexibleRadioGroup from "../components/FlexibleRadioGroup";

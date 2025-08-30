@@ -7,6 +7,7 @@ using Api.Services;
 using BCrypt.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using model.DTOs.Auth;
 
 namespace Api.Controllers
 {
@@ -39,7 +40,7 @@ namespace Api.Controllers
         }
 
         [HttpPost("login")]
-        public ActionResult<User> Login([FromBody] User loginUser)
+        public ActionResult<User> Login([FromBody] LoginRequest loginUser)
         {
             if (loginUser == null || loginUser.Username == null || loginUser.Password == null)
             {
@@ -47,12 +48,13 @@ namespace Api.Controllers
             }
 
             var user = _context.Users.FirstOrDefault(u => u.Username == loginUser.Username);
+            
             if (user == null || !BCrypt.Net.BCrypt.Verify(loginUser.Password, user.Password))
             {
                 return Unauthorized("Invalid username or password");
             }
 
-            return Ok(user);
+            return Ok(user.Id);
         }
 
         // GET /user/id/

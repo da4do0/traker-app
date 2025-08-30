@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Info, Zap, Droplets, Wheat, Utensils } from "lucide-react";
-import type { FoodDetailProps } from "../interfaces/Food";
+import type { FoodDetailProps } from "../types/Food";
 
 const FoodDetail: React.FC<FoodDetailProps> = ({
   code,

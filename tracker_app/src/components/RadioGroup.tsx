@@ -1,7 +1,7 @@
 import React from "react";
 import { User } from "lucide-react";
 
-import type { Sex } from "../interfaces/User"; // Ensure Sex is an enum or object, not just a type
+import type { Sex } from "../types/User"; // Ensure Sex is an enum or object, not just a type
 
 interface RadioGroupProps {
   label: string;

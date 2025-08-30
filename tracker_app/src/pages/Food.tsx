@@ -5,7 +5,7 @@ import ButtonContainer from "../components/ButtonContainer";
 import { Search, Zap, Clock, ChefHat, Plus } from "lucide-react";
 import FoodCard from "../components/FoodCard";
 import { APIDbHandler } from "../api/APIHandler";
-import type { FoodDetailProps, FoodDetailHover } from "../interfaces/Food";
+import type { FoodDetailProps, FoodDetailHover } from "../types/Food";
 import FoodDetail from "../components/FoodDetail";
 import FoodForm from "../components/FoodForm";
 

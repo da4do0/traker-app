@@ -1,8 +1,14 @@
 const endpointAPI = "http://localhost:5132/";
-import type { User } from "../interfaces/User";
+import type { User } from "../types/User";
 
 const CALLS = [
   //LETTURA RFID
+  {
+    name: "Login",
+    method: "POST",
+    endpoint: "user/login",
+    isAuthenticated: false,
+  },
   {
     name: "NewUser",
     method: "POST",
@@ -60,16 +66,12 @@ export class APIDbHandler {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          user: username,
-          password: password,
+          Username: username,
+          Password: password,
         }),
       });
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem("accessToken", data.accessToken);
-        localStorage.setItem("refreshToken", data.refreshToken);
-        localStorage.setItem("username", data.loginID);
-        localStorage.setItem("role", data.roleName);
         return data;
       } else {
         throw new Error("Nome utente o password errati");

@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import Header from "../components/Header";
 import Container from "../components/container";
 import { ArrowLeft, Plus, Info, AlertTriangle, Award, Zap, Scale, Clock } from "lucide-react";
-import type { FoodDetailHover } from "../interfaces/Food";
+import type { FoodDetailHover } from "../types/Food";
 
 const FoodDetailPage: React.FC = () => {
   const navigate = useNavigate();

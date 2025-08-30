@@ -8,7 +8,7 @@ namespace model.DTOs.Auth
         public string Username { get; set; }
 
         [Required]
-        [MinLength(6)]
+        //[MinLength(6)]
         public string Password { get; set; }
     }
 }
