@@ -1,52 +1,69 @@
 import React, { useState, useRef, useEffect } from "react";
 import { X, Camera } from "lucide-react";
 import Container from "./container";
+import { Html5QrcodeScanner } from "html5-qrcode";
 
 interface BarcodeFindProps {
   onClose: () => void;
+  onCodeFound?: (code: string) => void; // Nuovo prop per il risultato
 }
 
-const BarcodeFinder: React.FC<BarcodeFindProps> = ({ onClose }) => {
-  const [stream, setStream] = useState<MediaStream | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+const BarcodeFinder: React.FC<BarcodeFindProps> = ({ onClose, onCodeFound }) => {
+  const [scanner, setScanner] = useState<Html5QrcodeScanner | null>(null);
+  const [scannedCode, setScannedCode] = useState<string>("");
+  const scannerRef = useRef<HTMLDivElement>(null);
 
-  const startCamera = async () => {
-    try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: "environment",
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-      });
-
-      setStream(mediaStream);
-
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream;
-          videoRef.current.play().catch((err) => {
-            console.error("Errore play video:", err);
-          });
-        }
-      }, 100);
-    } catch (error) {
-      console.error("Errore accesso fotocamera:", error);
-      alert("Errore nell'accesso alla fotocamera. Assicurati di aver dato i permessi.");
-    }
-  };
 
   useEffect(() => {
+    // Inizializza lo scanner quando il componente si monta
+    const initScanner = () => {
+      const html5QrcodeScanner = new Html5QrcodeScanner(
+        "scanner-container",
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0,
+          showTorchButtonIfSupported: true,
+          showZoomSliderIfSupported: true,
+          supportedScanTypes: [0, 1],
+          rememberLastUsedCamera: true,
+        },
+        false
+      );
+
+      // Avvia il rendering dello scanner
+      html5QrcodeScanner.render(
+        // Success callback
+        (decodedText, decodedResult) => {
+          console.log(`Codice scansionato: ${decodedText}`);
+          setScannedCode(decodedText);
+          onCodeFound?.(decodedText);
+        },
+        // Error callback
+        (error) => {
+          // Errori normali durante la scansione - non loggare
+        }
+      );
+
+      setScanner(html5QrcodeScanner);
+    };
+
+    // Delay per assicurarsi che il DOM sia pronto
+    const timer = setTimeout(() => {
+      if (scannerRef.current && !scanner) {
+        initScanner();
+      }
+    }, 100);
+
     return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+      clearTimeout(timer);
+      if (scanner) {
+        scanner.clear().catch(error => {
+          console.error("Errore durante la pulizia dello scanner:", error);
+        });
       }
     };
-  }, [stream]);
-
-  useEffect(() => {
-    startCamera();
-  }, []);
+  }, []); // Dipendenze vuote
 
   return (
     <div className="absolute left-0 top-0 w-full h-full flex items-center justify-center z-50 backdrop-blur-xs">
@@ -57,7 +74,7 @@ const BarcodeFinder: React.FC<BarcodeFindProps> = ({ onClose }) => {
             <div className="bg-blue-900/50 rounded-lg p-2">
               <Camera color="blue" size={18} />
             </div>
-            <span className="text-white font-medium">Camera View</span>
+            <span className="text-white font-medium">Barcode Scanner</span>
           </div>
           <button
             className="text-gray-400 hover:text-white p-1"
@@ -67,16 +84,24 @@ const BarcodeFinder: React.FC<BarcodeFindProps> = ({ onClose }) => {
           </button>
         </div>
 
-        {/* Camera View */}
-        <div className="relative bg-gray-800 rounded-lg overflow-hidden aspect-video">
-          <video
-            ref={videoRef}
-            className="w-full h-full object-cover"
-            playsInline
-            muted
-            autoPlay
+        {/* Scanner Container */}
+        <div className="relative bg-gray-800 rounded-lg overflow-hidden">
+          <div 
+            id="scanner-container"
+            ref={scannerRef}
+            className="w-full"
           />
         </div>
+
+        {/* Risultato scansione */}
+        {scannedCode && (
+          <div className="mt-4 p-3 bg-green-900/50 rounded-lg border border-green-600">
+            <p className="text-green-300 text-sm mb-1">Codice scansionato:</p>
+            <code className="text-white font-mono text-lg">
+              {scannedCode}
+            </code>
+          </div>
+        )}
       </Container>
     </div>
   );
