@@ -1,19 +1,21 @@
-import React, { useState, useEffect, use } from "react";
+import React, { useState, useEffect} from "react";
 import Header from "../components/Header";
 import Container from "../components/container";
 import ButtonContainer from "../components/ButtonContainer";
-import { Search, Zap, Clock, ChefHat, Plus } from "lucide-react";
+import { Search, Zap, Clock, ChefHat, Plus, Camera} from "lucide-react";
 import FoodCard from "../components/FoodCard";
 import { APIDbHandler } from "../api/APIHandler";
 import type { FoodDetailProps, FoodDetailHover } from "../types/Food";
 import FoodDetail from "../components/FoodDetail";
 import FoodForm from "../components/FoodForm";
+import BarcodeFinder from "../components/BarcodeFinder";
 
 const Food: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [queryFood, setQueryFood] = useState([]);
   const [foodForm, setFoodForm] = useState<boolean>(false);
   const [foodDetailHover, setFoodDetailHover] = useState(null);
+  const [cameraActive, setCameraActive] = useState(false);
 
   const searchFood = async (query: string) => {
     try {
@@ -96,6 +98,7 @@ const Food: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+              <Camera color="gray" onClick={()=>{setCameraActive(true)}} className="cursor-pointer"/>
             </div>
             <div className="flex flex-col gap-2">
               {queryFood.map((food: FoodDetailProps) => (
@@ -212,6 +215,10 @@ const Food: React.FC = () => {
         <div className="absolute left-0 top-0 w-full h-full flex items-center justify-center z-50 backdrop-blur-xs">
           <FoodForm food={foodDetailHover} back={handleFoodHover}/>
         </div>
+      )}
+      
+      {cameraActive && (
+        <BarcodeFinder onClose={() => setCameraActive(false)} />
       )}
     </div>
   );

@@ -242,16 +242,6 @@ const Home: React.FC = () => {
               </div>
             </div>
           )}
-          {calories === 0 && (
-            <div className="flex flex-col items-center mt-2">
-              <span className="text-gray-400 text-sm mb-2">
-                Nessun alimento registrato oggi
-              </span>
-              <button className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center gap-2 transition-all">
-                <Plus className="w-4 h-4" /> Aggiungi il primo alimento
-              </button>
-            </div>
-          )}
         </Container>
 
         {/* Idratazione */}

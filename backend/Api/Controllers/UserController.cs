@@ -94,11 +94,17 @@ namespace Api.Controllers
                 return BadRequest("Username already exists");
             }
 
+            // Validation for height and weight
+            if (user.Height <= 0 || user.Weight <= 0)
+            {
+                return BadRequest("Height and weight must be positive values");
+            }
+
             user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
             user.CreatedAt = DateTime.UtcNow;
             user.UpdatedAt = DateTime.UtcNow;
 
-            _context.Users.Add(new User
+            var newUser = new User
             {
                 Username = user.Username,
                 Nome = user.Nome,
@@ -113,24 +119,29 @@ namespace Api.Controllers
                 DailyCalorieGoal = user.DailyCalorieGoal,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt
-            });
-            // Calcola IMC e FFMI
-            float imc = user.Weight / (user.Height * user.Height);
-            float ffmi = user.Weight / (user.Height * user.Height) * 100; // Formula semplificata, puoi personalizzarla
+            };
             
+            _context.Users.Add(newUser);
+            _context.SaveChanges(); // Save to get the user ID
+            
+            // Calculate IMC with proper height conversion (assuming height is in cm)
+            float heightInMeters = user.Height / 100f;
+            float imc = user.Weight / (heightInMeters * heightInMeters);
+            
+            // Remove FFMI calculation as it requires body fat percentage which we don't have
             _context.Misurations.Add(new Misuration
             {
-                UserId = _context.Users.FirstOrDefault(u => u.Username == user.Username).Id,
-                Date = _context.Users.FirstOrDefault(u => u.Username == user.Username).CreatedAt,
+                UserId = newUser.Id,
+                Date = DateTime.UtcNow,
                 Weight = user.Weight,
                 Height = user.Height,
                 IMC = imc,
-                FFMI = ffmi,
+                FFMI = 0, // Set to 0 or remove if not needed
             });
             _context.SaveChanges();
 
-            // Recupera l'utente appena creato dal database
-            var createdUser = _context.Users.FirstOrDefault(u => u.Username == user.Username);
+            // Use the already created user object instead of querying again
+            var createdUser = newUser;
             if (createdUser != null)
             {
                 createdUser.DailyCalorieGoal = calorieService.CalculateDailyCalories(createdUser);
@@ -144,7 +155,6 @@ namespace Api.Controllers
         [HttpGet("info/{userId}")]
         public ActionResult<InfoUserResponse> GetUserInfo(int userId)
         {
-            _logger.LogInformation($"Fetching user info for: {userId}");
             var user = _context.Users.FirstOrDefault(u => u.Id == userId);
             if (user == null)
             {
@@ -190,6 +200,7 @@ namespace Api.Controllers
                     };
                 })
                 .ToList();
+                
             return Ok(
                 new
                 {
