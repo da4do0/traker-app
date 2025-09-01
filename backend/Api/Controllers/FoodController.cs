@@ -353,6 +353,99 @@ namespace Api.Controllers
             var calories = await _foodService.GetUserCaloriesAsync(userId);
             return Ok(calories);
         }
+
+        [HttpGet("product/eu/{barcode}")]
+        public async Task<ActionResult<object>> GetProductByBarcode(string barcode)
+        {
+            if (string.IsNullOrWhiteSpace(barcode))
+            {
+                return BadRequest("Barcode parameter cannot be empty");
+            }
+
+            // Usa l'endpoint specifico per i prodotti invece del search
+            var url = $"{BaseEuUrl}/api/v0/product/{barcode}.json";
+
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.UserAgent.ParseAdd("FoodTracker/1.0 (test)");
+
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                var response = await _httpClient.SendAsync(request, cts.Token);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError(
+                        "Error fetching product from OpenFoodFacts API: {StatusCode} for barcode: {Barcode}",
+                        response.StatusCode,
+                        barcode
+                    );
+                    return StatusCode((int)response.StatusCode, "Error fetching product from food API");
+                }
+
+                var jsonContent = await response.Content.ReadAsStringAsync();
+
+                if (string.IsNullOrWhiteSpace(jsonContent))
+                {
+                    return NotFound(new { message = "Product not found", barcode = barcode });
+                }
+
+                // Usa il modello BarcodeRoot per singoli prodotti (specifico per barcode API)
+                var data = JsonSerializer.Deserialize<BarcodeRoot>(
+                    jsonContent,
+                    new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        NumberHandling = JsonNumberHandling.AllowReadingFromString,
+                    }
+                );
+
+                // Controlla se il prodotto è stato trovato
+                if (data.Product == null)
+                {
+                    return NotFound(new { message = "Product not found", barcode = barcode });
+                }
+
+                // Formatta la risposta come il tuo search endpoint per consistenza
+                var product = new
+                {
+                    code = data.Product.Code,
+                    name = data.Product.ProductName,
+                    brands = data.Product.Brands,
+                    quantity = data.Product.Quantity,
+                    categories = data.Product.Categories,
+                    imageUrl = data.Product.ImageUrl,
+                    nutritionGrade = data.Product.NutriscoreGrade,
+                    novaGroup = data.Product.NovaGroup,
+                    servingSize = data.Product.ServingSize,
+                    nutrition = new
+                    {
+                        calories100g = data.Product.Nutriments?.EnergyKcal100g,
+                        protein100g = data.Product.Nutriments?.Proteins100g,
+                        carbs100g = data.Product.Nutriments?.Carbohydrates100g,
+                        fat100g = data.Product.Nutriments?.Fat100g,
+                        sugar100g = data.Product.Nutriments?.Sugars100g,
+                        fiber100g = data.Product.Nutriments?.Fiber100g,
+                        salt100g = data.Product.Nutriments?.Salt100g,
+                        sodium100g = data.Product.Nutriments?.Sodium100g,
+                    },
+                    ingredients = data.Product.IngredientsText,
+                    allergens = data.Product.AllergensTags,
+                };
+
+                return Ok(new
+                {
+                    barcode = barcode,
+                    found = true,
+                    product = product
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching product for barcode: {Barcode}", barcode);
+                return StatusCode(500, "Internal server error");
+            }
+        }
         
     }
 }

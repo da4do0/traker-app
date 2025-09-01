@@ -26,6 +26,34 @@ export interface FoodDetailProps {
   handleFoodHover: (food: any) => void; // Funzione per gestire il click su "Dettagli"
 }
 
+export interface FoodDetailBarcode {
+  barcode: string;
+  found: boolean;
+  product: {
+    code: string;
+    name: string;
+    brands: string;
+    quantity: string;
+    categories: string;
+    imageUrl: string;
+    nutritionGrade: string;
+    novaGroup: number | null;
+    servingSize: string | null;
+    nutrition: {
+      calories100g: number | null;
+      protein100g: number | null;
+      carbs100g: number | null;
+      fat100g: number | null;
+      sugar100g: number | null;
+      fiber100g: number | null;
+      salt100g: number | null;
+      sodium100g: number | null;
+    };
+    ingredients: string;
+    allergens: string[];
+  };
+}
+
 export interface FoodDetailHover {
   code: string;
   name: string;

@@ -1,26 +1,25 @@
-import React, { useState, useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import Header from "../components/Header";
 import Container from "../components/container";
 import ButtonContainer from "../components/ButtonContainer";
-import { Search, Zap, Clock, ChefHat, Plus, Camera} from "lucide-react";
+import { Search, Zap, Clock, ChefHat, Plus, Camera } from "lucide-react";
 import FoodCard from "../components/FoodCard";
 import { APIDbHandler } from "../api/APIHandler";
-import type { FoodDetailProps, FoodDetailHover } from "../types/Food";
+import type { FoodDetailProps, FoodDetailHover, FoodDetailBarcode } from "../types/Food";
 import FoodDetail from "../components/FoodDetail";
 import FoodForm from "../components/FoodForm";
 import BarcodeFinder from "../components/BarcodeFinder";
 
 const Food: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [queryFood, setQueryFood] = useState([]);
+  const [queryFood, setQueryFood] = useState<FoodDetailProps[]>([]);
   const [foodForm, setFoodForm] = useState<boolean>(false);
   const [foodDetailHover, setFoodDetailHover] = useState(null);
   const [cameraActive, setCameraActive] = useState(false);
 
-  const searchFood = async (query: string) => {
+  const searchFoodQuery = async (query: string) => {
     try {
-      const response = await APIDbHandler.SearchFood(query);
-      console.log(response, "Search Results");
+      const response = await APIDbHandler.SearchFoodQuery(query);
 
       const formatted = response?.products.map((p: FoodDetailProps) => ({
         code: p?.code,
@@ -49,16 +48,57 @@ const Food: React.FC = () => {
     }
   };
 
+  const searchFoodBarcode = async (barcode: string) => {
+    try {
+      // Padding del barcode a 13 cifre se necessario
+      const paddedBarcode = barcode.padStart(13, '0');
+      const response: FoodDetailBarcode = await APIDbHandler.SearchFoodBarcode(paddedBarcode);
+
+      if (response?.found && response?.product) {
+        const p = response.product;
+        const formatted = {
+          code: p.code,
+          name: p.name || "Nome non disponibile",
+          brands: p.brands || "Marca non specificata",
+          quantity: p.quantity || "Quantità non specificata",
+          categories: p.categories || "Sconosciuto",
+          imageUrl: p.imageUrl || "https://via.placeholder.com/150",
+          nutritionGrade: p.nutritionGrade || "N/A",
+          novaGroup: p.novaGroup || 0,
+          servingSize: p.servingSize || "Porzione non specificata",
+          nutrition: {
+            calories100g: p.nutrition?.calories100g ?? 0,
+            protein100g: p.nutrition?.protein100g ?? 0,
+            carbs100g: p.nutrition?.carbs100g ?? 0,
+            fat100g: p.nutrition?.fat100g ?? 0,
+          },
+          ingredients: p.ingredients || "Ingredienti non specificati",
+          allergens: p.allergens || [],
+          handleFoodHover: handleFoodHover,
+        };
+
+        setQueryFood([formatted]);
+      } else {
+        console.log("Prodotto non trovato");
+        setQueryFood([]);
+      }
+    } catch (error) {
+      console.error("Errore durante la ricerca:", error);
+      setQueryFood([]);
+    }
+  };
+
   const handleFoodHover = (food: any) => {
     console.log("Food hovered:", food);
     setFoodDetailHover(food);
-  }
+  };
 
   useEffect(() => {
     const handleKeyDown = async (event: KeyboardEvent) => {
       if (event.key === "Enter" && searchQuery.trim() !== "") {
         event.preventDefault();
-        await searchFood(searchQuery);
+        if (/^[^\d]+$/.test(searchQuery)) await searchFoodQuery(searchQuery);
+        else await searchFoodBarcode(searchQuery);
       }
     };
 
@@ -98,7 +138,13 @@ const Food: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <Camera color="gray" onClick={()=>{setCameraActive(true)}} className="cursor-pointer"/>
+              <Camera
+                color="gray"
+                onClick={() => {
+                  setCameraActive(true);
+                }}
+                className="cursor-pointer"
+              />
             </div>
             <div className="flex flex-col gap-2">
               {queryFood.map((food: FoodDetailProps) => (
@@ -122,7 +168,6 @@ const Food: React.FC = () => {
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
               <span className=" text-white">In arrivo</span>
 
               {/* <FoodCard
@@ -213,12 +258,19 @@ const Food: React.FC = () => {
       </main>
       {foodDetailHover && (
         <div className="absolute left-0 top-0 w-full h-full flex items-center justify-center z-50 backdrop-blur-xs">
-          <FoodForm food={foodDetailHover} back={handleFoodHover}/>
+          <FoodForm food={foodDetailHover} back={handleFoodHover} />
         </div>
       )}
-      
+
       {cameraActive && (
-        <BarcodeFinder onClose={() => setCameraActive(false)} />
+        <BarcodeFinder 
+          onClose={() => setCameraActive(false)} 
+          onCodeFound={(code) => {
+            setSearchQuery(code);
+            searchFoodBarcode(code);
+            setCameraActive(false);
+          }}
+        />
       )}
     </div>
   );

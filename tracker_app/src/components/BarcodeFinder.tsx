@@ -1,69 +1,163 @@
 import React, { useState, useRef, useEffect } from "react";
 import { X, Camera } from "lucide-react";
 import Container from "./container";
-import { Html5QrcodeScanner } from "html5-qrcode";
+import { BrowserMultiFormatReader, NotFoundException, BrowserCodeReader } from "@zxing/library";
 
 interface BarcodeFindProps {
   onClose: () => void;
   onCodeFound?: (code: string) => void; // Nuovo prop per il risultato
 }
 
-const BarcodeFinder: React.FC<BarcodeFindProps> = ({ onClose, onCodeFound }) => {
-  const [scanner, setScanner] = useState<Html5QrcodeScanner | null>(null);
+const BarcodeFinder: React.FC<BarcodeFindProps> = ({
+  onClose,
+  onCodeFound,
+}) => {
+  const [reader, setReader] = useState<BrowserMultiFormatReader | null>(null);
   const [scannedCode, setScannedCode] = useState<string>("");
-  const scannerRef = useRef<HTMLDivElement>(null);
-
+  const [isScanning, setIsScanning] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    // Inizializza lo scanner quando il componente si monta
-    const initScanner = () => {
-      const html5QrcodeScanner = new Html5QrcodeScanner(
-        "scanner-container",
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0,
-          showTorchButtonIfSupported: true,
-          showZoomSliderIfSupported: true,
-          supportedScanTypes: [0, 1],
-          rememberLastUsedCamera: true,
-        },
-        false
-      );
+    const codeReader = new BrowserMultiFormatReader();
+    setReader(codeReader);
 
-      // Avvia il rendering dello scanner
-      html5QrcodeScanner.render(
-        // Success callback
-        (decodedText, decodedResult) => {
-          console.log(`Codice scansionato: ${decodedText}`);
-          setScannedCode(decodedText);
-          onCodeFound?.(decodedText);
-        },
-        // Error callback
-        (error) => {
-          // Errori normali durante la scansione - non loggare
+    const startScanning = async () => {
+      if (!videoRef.current) return;
+
+      try {
+        setError("");
+        setIsScanning(false);
+        
+        // Prova diverse configurazioni video
+        const constraints = [
+          { video: { facingMode: "environment" } },
+          { video: { facingMode: "user" } },
+          { video: true }
+        ];
+        
+        let stream = null;
+        let constraintIndex = 0;
+        
+        while (!stream && constraintIndex < constraints.length) {
+          try {
+            console.log(`🔄 Tentativo ${constraintIndex + 1} con configurazione:`, constraints[constraintIndex]);
+            stream = await navigator.mediaDevices.getUserMedia(constraints[constraintIndex]);
+            console.log('✅ Stream ottenuto con successo');
+          } catch (streamErr: any) {
+            console.warn(`⚠️ Fallito tentativo ${constraintIndex + 1}:`, streamErr.message);
+            constraintIndex++;
+          }
         }
-      );
+        
+        if (!stream) {
+          setError("Impossibile accedere alla fotocamera");
+          return;
+        }
 
-      setScanner(html5QrcodeScanner);
+        // Assegna lo stream al video element
+        videoRef.current.srcObject = stream;
+        
+        // Attendi che il video sia pronto
+        await new Promise((resolve) => {
+          videoRef.current!.onloadedmetadata = resolve;
+        });
+        
+        setIsScanning(true);
+        
+        // Scansione continua usando canvas
+        let animationId: number;
+        const scanFromVideo = async () => {
+          if (!videoRef.current || !canvasRef.current) return;
+          
+          const canvas = canvasRef.current;
+          const ctx = canvas.getContext('2d');
+          const video = videoRef.current;
+          
+          if (!ctx || video.readyState < 2) {
+            animationId = requestAnimationFrame(scanFromVideo);
+            return;
+          }
+          
+          // Imposta dimensioni canvas
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          
+          // Disegna frame corrente
+          ctx.drawImage(video, 0, 0);
+          
+          try {
+            // Crea un'immagine dal canvas per ZXing
+            const dataURL = canvas.toDataURL('image/png');
+            const img = new Image();
+            img.src = dataURL;
+            
+            await new Promise((resolve) => {
+              img.onload = resolve;
+            });
+            
+            // Prova a decodificare dall'immagine
+            const result = await codeReader.decodeFromImageElement(img);
+            
+            if (result) {
+              const code = result.getText();
+              console.log(`✅ Codice scansionato: ${code}`);
+              console.log('📋 Formato:', result.getBarcodeFormat());
+              console.log('🔍 Lunghezza:', code.length);
+              
+              setScannedCode(code);
+              onCodeFound?.(code);
+              return; // Stop scanning dopo aver trovato un codice
+            }
+          } catch (scanError) {
+            if (!(scanError instanceof NotFoundException)) {
+              console.warn('⚠️ Errore scansione:', scanError);
+            }
+          }
+          
+          // Continua la scansione
+          animationId = requestAnimationFrame(scanFromVideo);
+        };
+        
+        // Avvia la scansione
+        scanFromVideo();
+        
+      } catch (err: any) {
+        console.error('❌ Errore inizializzazione scanner:', err);
+        setIsScanning(false);
+        
+        if (err.name === 'NotAllowedError') {
+          setError("Permesso fotocamera negato. Abilita l'accesso alla fotocamera.");
+        } else if (err.name === 'NotFoundError') {
+          setError("Nessuna fotocamera trovata sul dispositivo.");
+        } else if (err.name === 'NotReadableError') {
+          setError("Fotocamera occupata da un'altra applicazione.");
+        } else {
+          setError(`Errore: ${err.message || "Errore sconosciuto"}`);
+        }
+      }
     };
 
-    // Delay per assicurarsi che il DOM sia pronto
-    const timer = setTimeout(() => {
-      if (scannerRef.current && !scanner) {
-        initScanner();
-      }
-    }, 100);
+    // Avvia la scansione dopo un breve delay
+    const timer = setTimeout(startScanning, 100);
 
     return () => {
       clearTimeout(timer);
-      if (scanner) {
-        scanner.clear().catch(error => {
-          console.error("Errore durante la pulizia dello scanner:", error);
-        });
+      if (codeReader) {
+        codeReader.reset();
       }
+      
+      // Ferma il video stream
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+        videoRef.current.srcObject = null;
+      }
+      
+      setIsScanning(false);
     };
-  }, []); // Dipendenze vuote
+  }, [onCodeFound]);
 
   return (
     <div className="absolute left-0 top-0 w-full h-full flex items-center justify-center z-50 backdrop-blur-xs">
@@ -86,20 +180,39 @@ const BarcodeFinder: React.FC<BarcodeFindProps> = ({ onClose, onCodeFound }) => 
 
         {/* Scanner Container */}
         <div className="relative bg-gray-800 rounded-lg overflow-hidden">
-          <div 
-            id="scanner-container"
-            ref={scannerRef}
-            className="w-full"
+          <video
+            ref={videoRef}
+            className="w-full h-64 object-cover"
+            autoPlay
+            playsInline
+            muted
           />
+          <canvas
+            ref={canvasRef}
+            className="hidden"
+          />
+          {!isScanning && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
+              <div className="text-white text-center">
+                <Camera size={48} className="mx-auto mb-2 opacity-50" />
+                <p className="text-sm opacity-75">
+                  {error || "Inizializzazione scanner..."}
+                </p>
+              </div>
+            </div>
+          )}
+          {error && (
+            <div className="absolute bottom-2 left-2 right-2 p-2 bg-red-900/80 rounded text-white text-xs text-center">
+              {error}
+            </div>
+          )}
         </div>
 
         {/* Risultato scansione */}
         {scannedCode && (
           <div className="mt-4 p-3 bg-green-900/50 rounded-lg border border-green-600">
             <p className="text-green-300 text-sm mb-1">Codice scansionato:</p>
-            <code className="text-white font-mono text-lg">
-              {scannedCode}
-            </code>
+            <code className="text-white font-mono text-lg">{scannedCode}</code>
           </div>
         )}
       </Container>

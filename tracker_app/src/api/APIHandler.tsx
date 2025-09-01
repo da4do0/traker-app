@@ -28,9 +28,15 @@ const CALLS = [
     isAuthenticated: false,
   },
   {
-    name: "SearchFood",
+    name: "SearchFoodQuery",
     method: "GET",
     endpoint: "food/search/eu/",
+    isAuthenticated: false,
+  },
+  {
+    name: "SearchFoodBarcode",
+    method: "GET",
+    endpoint: "food/product/eu/",
     isAuthenticated: false,
   },
   {
@@ -218,10 +224,26 @@ export class APIDbHandler {
     return response.json();
   }
 
-  static async SearchFood(query: string) {
-    let call = this.getCall("SearchFood");
-    if (!call) throw new Error("Call SearchFood not found");
+  static async SearchFoodQuery(query: string) {
+    let call = this.getCall("SearchFoodQuery");
+    if (!call) throw new Error("Call SearchFoodQuery not found");
     const response = await fetch(endpointAPI + call.endpoint + query, {
+      method: call.method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || "Errore durante la ricerca del cibo");
+    }
+    return response.json();
+  }
+
+  static async SearchFoodBarcode(barcode: string) {
+    let call = this.getCall("SearchFoodBarcode");
+    if (!call) throw new Error("Call SearchFoodBarcode not found");
+    const response = await fetch(endpointAPI + call.endpoint + barcode, {
       method: call.method,
       headers: {
         "Content-Type": "application/json",
