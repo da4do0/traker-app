@@ -137,11 +137,24 @@ namespace Api.Services
 
         public async Task<bool> RemoveUserFoodAsync(int userFoodId)
         {
+            Console.WriteLine($"🗑️ [Backend] Starting RemoveUserFoodAsync for userFoodId: {userFoodId}");
+            
             var userFood = await _context.UserFoods.FindAsync(userFoodId);
-            if (userFood == null) return false;
+            if (userFood == null) 
+            {
+                Console.WriteLine($"🗑️ [Backend] UserFood with ID {userFoodId} not found in database");
+                return false;
+            }
+
+            Console.WriteLine($"🗑️ [Backend] Found UserFood: ID={userFood.Id}, FoodId={userFood.FoodId}, UserId={userFood.UserId}, Quantity={userFood.Quantity}, Meal={userFood.Meal}");
 
             _context.UserFoods.Remove(userFood);
-            await _context.SaveChangesAsync();
+            Console.WriteLine($"🗑️ [Backend] UserFood marked for removal");
+            
+            var saveResult = await _context.SaveChangesAsync();
+            Console.WriteLine($"🗑️ [Backend] SaveChanges result: {saveResult} records affected");
+            
+            Console.WriteLine($"🗑️ [Backend] RemoveUserFoodAsync completed successfully for userFoodId: {userFoodId}");
             return true;
         }
 
@@ -153,6 +166,40 @@ namespace Api.Services
             .SumAsync(uf => (uf.Food.Calories * uf.Quantity) / 100.0);
 
             return totalCalories;
+        }
+
+        public async Task<Object> GetUserFoodListAsync(int userId)
+        {
+            Console.WriteLine($"📝 [Backend] GetUserFoodListAsync called for userId: {userId}");
+            
+            var foods = await _context.UserFoods
+                .Where(uf => uf.UserId == userId && uf.Date.Date == DateTime.Now.Date)
+                .Include(uf => uf.Food)
+                .Select(uf => new
+                {
+                    Id = uf.Id, // UserFood ID, not Food ID
+                    FoodId = uf.Food.Id, // Keep Food ID as separate field
+                    uf.Food.Name,
+                    uf.Food.Description,
+                    uf.Food.Image,
+                    uf.Food.Calories,
+                    uf.Food.Proteins,
+                    uf.Food.Carbohydrates,
+                    uf.Food.Fats,
+                    uf.Food.code,
+                    uf.Quantity,
+                    uf.Meal,
+                    uf.Date
+                })
+                .ToListAsync();
+
+            Console.WriteLine($"📝 [Backend] Retrieved {foods.Count} food entries for userId: {userId}");
+            foreach(var food in foods)
+            {
+                Console.WriteLine($"📝 [Backend] UserFood ID: {food.GetType().GetProperty("Id")?.GetValue(food)}, Food Name: {food.GetType().GetProperty("Name")?.GetValue(food)}, FoodId: {food.GetType().GetProperty("FoodId")?.GetValue(food)}");
+            }
+
+            return foods;
         }
     }
 }

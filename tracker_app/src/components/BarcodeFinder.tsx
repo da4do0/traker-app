@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { X, Camera } from "lucide-react";
 import Container from "./container";
-import { BrowserMultiFormatReader, NotFoundException, BrowserCodeReader } from "@zxing/library";
+import { BrowserMultiFormatReader, NotFoundException } from "@zxing/library";
 
 interface BarcodeFindProps {
   onClose: () => void;
@@ -12,7 +12,6 @@ const BarcodeFinder: React.FC<BarcodeFindProps> = ({
   onClose,
   onCodeFound,
 }) => {
-  const [reader, setReader] = useState<BrowserMultiFormatReader | null>(null);
   const [scannedCode, setScannedCode] = useState<string>("");
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
@@ -21,7 +20,6 @@ const BarcodeFinder: React.FC<BarcodeFindProps> = ({
 
   useEffect(() => {
     const codeReader = new BrowserMultiFormatReader();
-    setReader(codeReader);
 
     const startScanning = async () => {
       if (!videoRef.current) return;
@@ -67,8 +65,8 @@ const BarcodeFinder: React.FC<BarcodeFindProps> = ({
         setIsScanning(true);
         
         // Scansione continua usando canvas
-        let animationId: number;
         const scanFromVideo = async () => {
+          let animationId: number;
           if (!videoRef.current || !canvasRef.current) return;
           
           const canvas = canvasRef.current;

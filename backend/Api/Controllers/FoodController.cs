@@ -446,6 +446,43 @@ namespace Api.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
-        
+
+        [HttpGet("list/{userId}")]
+        public async Task<ActionResult<IEnumerable<Food>>> GetUserFoodList(int userId)
+        {
+            var foods = await _foodService.GetUserFoodListAsync(userId);
+            return Ok(foods);
+        }
+
+        [HttpDelete("{userFoodId}")]
+        public async Task<ActionResult> RemoveUserFood(int userFoodId)
+        {
+            var result = await _foodService.RemoveUserFoodAsync(userFoodId);
+
+            if (!result)
+                return NotFound(new { msg = "UserFood entry not found" });
+
+            return Ok(new { msg = "UserFood entry removed successfully" });
+        }
+
+        [HttpPut("{userFoodId}")]
+        public async Task<ActionResult> UpdateUserFood(
+            int userFoodId,
+            [FromBody] UserFood updatedEntry)
+        {
+            var existingEntry = await _context.UserFoods.FindAsync(userFoodId);
+            if (existingEntry == null)
+            {
+                return NotFound(new { msg = "UserFood entry not found" });
+            }
+
+            // Aggiorna i campi modificabili
+            existingEntry.Quantity = updatedEntry.Quantity;
+            existingEntry.Meal = updatedEntry.Meal;
+            existingEntry.Date = updatedEntry.Date;
+
+            await _context.SaveChangesAsync();
+            return Ok(new { msg = "UserFood entry updated successfully" });
+        }
     }
 }

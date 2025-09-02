@@ -51,6 +51,24 @@ const CALLS = [
     endpoint: "food/calories/",
     isAuthenticated: false,
   },
+  {
+    name: "UpdateFood",
+    method: "PUT",
+    endpoint: "food/update/",
+    isAuthenticated: false,
+  },
+  {
+    name: "DeleteFood",
+    method: "DELETE",
+    endpoint: "food/",
+    isAuthenticated: false,
+  },
+  {
+    name: "FoodList",
+    method: "GET",
+    endpoint: "food/list/",
+    isAuthenticated: false,
+  },
 ];
 
 export class APIDbHandler {
@@ -285,6 +303,55 @@ export class APIDbHandler {
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(errorText || "Errore durante il calcolo delle calorie");
+    }
+    return response.json();
+  }
+
+  static async UpdateFood(foodId: number, updateData: any) {
+    let call = this.getCall("UpdateFood");
+    if (!call) throw new Error("Call UpdateFood not found");
+    const response = await fetch(endpointAPI + call.endpoint + foodId, {
+      method: call.method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updateData),
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || "Errore durante l'aggiornamento del cibo");
+    }
+    return response.json();
+  }
+
+  static async DeleteFood(foodId: number) {
+    let call = this.getCall("DeleteFood");
+    if (!call) throw new Error("Call DeleteFood not found");
+    const response = await fetch(endpointAPI + call.endpoint + foodId, {
+      method: call.method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || "Errore durante l'eliminazione del cibo");
+    }
+    return response.json();
+  }
+
+  static async FoodList(userId: number) {
+    let call = this.getCall("FoodList");
+    if (!call) throw new Error("Call DeleteFood not found");
+    const response = await fetch(endpointAPI + call.endpoint + userId, {
+      method: call.method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || "Errore durante l'eliminazione del cibo");
     }
     return response.json();
   }

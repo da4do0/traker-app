@@ -19,5 +19,6 @@ namespace Api.Interfaces
         Task<IEnumerable<UserFood>> GetUserFoodsByDateAsync(int userId, DateTime date);
         Task<bool> RemoveUserFoodAsync(int userFoodId);
         Task<Object> GetUserCaloriesAsync(int userId);
+        Task<Object> GetUserFoodListAsync(int userId);
     }
 }

@@ -175,7 +175,7 @@ const Home: React.FC = () => {
       {/* Cards principali */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {/* Nutrizione */}
-        <Container>
+        <Container onClick={() => navigate("/foodList")} css="cursor-pointer">
           <div className="flex items-center gap-2 text-green-400 font-semibold text-lg">
             <Utensils className="w-5 h-5" />
             Nutrizione Oggi
