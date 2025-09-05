@@ -10,8 +10,8 @@ namespace Api.model
         public MealType Meal { get; set; }
 
         // Navigation properties per le relazioni
-        public virtual User User { get; set; } = null!;
-        public virtual Food Food { get; set; } = null!;
+        public virtual User? User { get; set; }
+        public virtual Food? Food { get; set; }
 
         public enum MealType
         {

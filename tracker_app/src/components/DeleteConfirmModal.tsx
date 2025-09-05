@@ -16,13 +16,9 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
   };
 
   if (!isOpen || !food) {
-    console.log("DeleteConfirmModal opened for food:", food);
+    //console.log("DeleteConfirmModal opened for food:", food);
     return null;
   }
-
-  useEffect(() => {
-    console.log("DeleteConfirmModal opened for food:", food);
-  }, []);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

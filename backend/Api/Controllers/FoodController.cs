@@ -454,7 +454,7 @@ namespace Api.Controllers
             return Ok(foods);
         }
 
-        [HttpDelete("{userFoodId}")]
+        [HttpDelete("registration/{userFoodId}")]
         public async Task<ActionResult> RemoveUserFood(int userFoodId)
         {
             var result = await _foodService.RemoveUserFoodAsync(userFoodId);
@@ -465,12 +465,14 @@ namespace Api.Controllers
             return Ok(new { msg = "UserFood entry removed successfully" });
         }
 
-        [HttpPut("{userFoodId}")]
+        [HttpPut("registration")]
         public async Task<ActionResult> UpdateUserFood(
-            int userFoodId,
             [FromBody] UserFood updatedEntry)
         {
-            var existingEntry = await _context.UserFoods.FindAsync(userFoodId);
+            Console.WriteLine($"✏️ [Backend] Starting UpdateUserFood for userFoodId: {updatedEntry.Id}");
+            Console.WriteLine($"✏️ [Backend] UpdatedEntry: FoodId={updatedEntry.FoodId}, UserId={updatedEntry.UserId}, Quantity={updatedEntry.Quantity}, Meal={updatedEntry.Meal}, Date={updatedEntry.Date}");
+            var existingEntry = await _context.UserFoods.FindAsync(updatedEntry.Id);
+            Console.WriteLine($"find: {existingEntry}");
             if (existingEntry == null)
             {
                 return NotFound(new { msg = "UserFood entry not found" });
@@ -479,7 +481,6 @@ namespace Api.Controllers
             // Aggiorna i campi modificabili
             existingEntry.Quantity = updatedEntry.Quantity;
             existingEntry.Meal = updatedEntry.Meal;
-            existingEntry.Date = updatedEntry.Date;
 
             await _context.SaveChangesAsync();
             return Ok(new { msg = "UserFood entry updated successfully" });

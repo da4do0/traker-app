@@ -9,6 +9,15 @@ export interface NutritionData {
   sodium100g?: number;
 }
 
+export interface Food{
+  Id: number;
+  FoodId: number;
+  UserId: number;
+  Quantity: number;
+  Date: Date;
+  Meal: number;
+}
+
 export interface FoodDetailProps {
   code: string;
   name: string;

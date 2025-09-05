@@ -27,7 +27,6 @@ const Home: React.FC = () => {
   // Recupera informazioni utente e calcola valori nutrizionali
   const getInfoUser = async () => {
     try {
-      console.log("Fetching user info for:", userId);
       if (userId) {
         const response = await APIDbHandler.InfoUser(userId);
         // Imposta dati base utente
@@ -51,7 +50,6 @@ const Home: React.FC = () => {
           setMacros({ carbs: 0, proteins: 0, fats: 0 });
         }
 
-        console.log(response, "User Info");
       }
     } catch (error) {
       console.error(
@@ -77,8 +75,6 @@ const Home: React.FC = () => {
         const consumedQuantity = item.quantity;
         const multiplier = consumedQuantity / 100; // Converti da quantità a percentuale
 
-        console.log("Processing item:", item.food.name);
-        console.log("Food data:", item.food);
 
         // Accumula macronutrienti basandosi sulla quantità consumata
         acc.carbs += item.food.carbohydrates * multiplier;
@@ -101,8 +97,6 @@ const Home: React.FC = () => {
     // Converte macronutrienti in calorie (carbs e proteine = 4kcal/g, grassi = 9kcal/g)
     const totalMacroCalories =
       macros.carbs * 4 + macros.proteins * 4 + macros.fats * 9;
-    console.log("Macros:", macros);
-    console.log("Total macro calories:", totalMacroCalories);
 
     if (totalMacroCalories === 0) return { carbs: 0, proteins: 0, fats: 0 };
 
@@ -113,7 +107,6 @@ const Home: React.FC = () => {
       fats: ((macros.fats * 9) / totalMacroCalories) * 100,
     };
 
-    console.log("Macro percentages:", percentages);
     return percentages;
   };
 

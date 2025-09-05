@@ -182,7 +182,7 @@ const FoodForm: React.FC<FoodFormProps> = ({food, back}) => {
                   { value: "Breakfast", label: "Colazione", emoji: "🌅" },
                   { value: "Lunch", label: "Pranzo", emoji: "☀️" },
                   { value: "Dinner", label: "Cena", emoji: "🌙" },
-                  { value: "snack", label: "Snack", emoji: "🍎" },
+                  { value: "Snack", label: "Snack", emoji: "🍎" },
                 ].map((meal) => (
                   <button
                     key={meal.value}

@@ -86,20 +86,30 @@ namespace Api.Services
         // Metodi per la relazione User-Food
         public async Task<bool> AddFoodToUserAsync(int userId, int foodId, int quantity, string mealType)
         {
+            Console.WriteLine($"🍽️ [Backend] AddFoodToUserAsync called with mealType: '{mealType}'");
+            
             if (!Enum.TryParse<UserFood.MealType>(mealType, true, out var parsedMealType))
             {
+                Console.WriteLine($"🍽️ [Backend] Failed to parse mealType: '{mealType}'. Valid values are: {string.Join(", ", Enum.GetNames<UserFood.MealType>())}");
                 return false; // Invalid meal type
             }
 
+            Console.WriteLine($"🍽️ [Backend] Successfully parsed mealType '{mealType}' to enum value: {parsedMealType} (numeric: {(int)parsedMealType})");
             return await AddFoodToUserAsync(userId, foodId, quantity, parsedMealType);
         }
 
         public async Task<bool> AddFoodToUserAsync(int userId, int foodId, int quantity, UserFood.MealType mealType)
         {
+            Console.WriteLine($"🍽️ [Backend] AddFoodToUserAsync (enum overload) called with userId: {userId}, foodId: {foodId}, quantity: {quantity}, mealType: {mealType} (numeric: {(int)mealType})");
+            
             var user = await _context.Users.FindAsync(userId);
             var food = await _context.Foods.FindAsync(foodId);
 
-            if (user == null || food == null) return false;
+            if (user == null || food == null) 
+            {
+                Console.WriteLine($"🍽️ [Backend] User or Food not found. User: {user != null}, Food: {food != null}");
+                return false;
+            }
 
             var userFood = new UserFood
             {
@@ -110,8 +120,12 @@ namespace Api.Services
                 Date = DateTime.Now
             };
 
+            Console.WriteLine($"🍽️ [Backend] Creating UserFood entry: UserId={userFood.UserId}, FoodId={userFood.FoodId}, Quantity={userFood.Quantity}, Meal={userFood.Meal} (numeric: {(int)userFood.Meal}), Date={userFood.Date}");
+
             _context.UserFoods.Add(userFood);
             await _context.SaveChangesAsync();
+            
+            Console.WriteLine($"🍽️ [Backend] UserFood entry saved successfully");
             return true;
         }
 

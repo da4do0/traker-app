@@ -40,9 +40,7 @@ const BarcodeFinder: React.FC<BarcodeFindProps> = ({
         
         while (!stream && constraintIndex < constraints.length) {
           try {
-            console.log(`🔄 Tentativo ${constraintIndex + 1} con configurazione:`, constraints[constraintIndex]);
             stream = await navigator.mediaDevices.getUserMedia(constraints[constraintIndex]);
-            console.log('✅ Stream ottenuto con successo');
           } catch (streamErr: any) {
             console.warn(`⚠️ Fallito tentativo ${constraintIndex + 1}:`, streamErr.message);
             constraintIndex++;
@@ -100,9 +98,6 @@ const BarcodeFinder: React.FC<BarcodeFindProps> = ({
             
             if (result) {
               const code = result.getText();
-              console.log(`✅ Codice scansionato: ${code}`);
-              console.log('📋 Formato:', result.getBarcodeFormat());
-              console.log('🔍 Lunghezza:', code.length);
               
               setScannedCode(code);
               onCodeFound?.(code);

@@ -1,5 +1,6 @@
 export interface FoodEntry {
   id: string | number;
+  foodId?: number; // Food ID from the Foods table
   name: string;
   calories: number;
   proteins: number;

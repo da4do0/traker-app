@@ -24,8 +24,9 @@ import type {
   MealSection as MealSectionType, 
   DailyStats, 
   EditFoodData, 
-  MealType 
+  MealType
 } from "../types/FoodList";
+import type {Food} from "../types/Food";
 
 // Backend API response type
 interface BackendFoodItem {
@@ -53,13 +54,32 @@ const MEAL_TYPES: MealType[] = [
 
 // Helper function to convert meal number to meal name
 const getMealName = (mealNumber: number): string => {
+  
+  let result: string;
   switch (mealNumber) {
-    case 1: return "Colazione";
-    case 2: return "Pranzo"; 
-    case 3: return "Cena";
-    case 4: return "Spuntino";
-    default: return "Spuntino";
+    case 0: result = "Colazione"; break;  // Breakfast
+    case 1: result = "Pranzo"; break;     // Lunch
+    case 2: result = "Cena"; break;       // Dinner
+    case 3: result = "Spuntino"; break;   // Snack
+    default: result = "Spuntino"; break;
   }
+  
+  return result;
+};
+
+// Helper function to convert meal name to meal number (for API calls)
+const getMealNumber = (mealName: string): number => {
+  
+  let result: number;
+  switch (mealName) {
+    case "Colazione": result = 0; break;  // Breakfast
+    case "Pranzo": result = 1; break;     // Lunch
+    case "Cena": result = 2; break;       // Dinner
+    case "Spuntino": result = 3; break;   // Snack
+    default: result = 3; break; // Default to Snack
+  }
+
+  return result;
 };
 
 const FoodList: React.FC = () => {
@@ -96,11 +116,9 @@ const FoodList: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      console.log("Loading food entries for userId:", userId);
 
       if (userId) {
         const response: BackendFoodItem[] = await APIDbHandler.FoodList(userId);
-        console.log("FoodList response:", response);
         
         // Transform API data to our FoodEntry format
         const entries: FoodEntry[] = response
@@ -110,7 +128,8 @@ const FoodList: React.FC = () => {
             return itemDate === selectedDate;
           })
           .map((item: BackendFoodItem, index: number) => ({
-            id: item.id, // Now using the correct UserFood ID from backend
+            id: item.id, // UserFood ID from backend
+            foodId: item.foodId, // Food ID from backend
             name: item.name,
             calories: Math.round((item.calories / 100) * item.quantity),
             proteins: Math.round(((item.proteins / 100) * item.quantity) * 10) / 10,
@@ -122,7 +141,6 @@ const FoodList: React.FC = () => {
             imageUrl: item.image
           }));
   
-        console.log("Processed entries:", entries);
         setFoodEntries(entries);
         calculateDailyStats(entries);
         organizeMealSections(entries);
@@ -189,20 +207,60 @@ const FoodList: React.FC = () => {
     setMealSections(sections);
   };
 
+  const mapMealToEnum = (italianMeal: string): number => {
+    console.log(`🔄 [APIHandler] mapMealToEnum called with: ${italianMeal}`);
+    
+    const mealMap: { [key: string]: number } = {
+      "Colazione": 0,  // Breakfast
+      "Pranzo": 1,     // Lunch  
+      "Cena": 2,       // Dinner
+      "Spuntino": 3    // Snack
+    };
+    
+    const result = mealMap[italianMeal] || 3; // Default to Snack if not found
+    console.log(`🔄 [APIHandler] mapMealToEnum returning: ${result} for ${italianMeal}`);
+    return result;
+  }
+
   // Handle food editing
   const handleEditFood = async (data: EditFoodData) => {
     try {
+      console.log(`🍽️ [FoodList] handleEditFood called with data:`, data);
+      console.log(`🍽️ [FoodList] data.meal value: '${data.meal}' (type: ${typeof data.meal})`);
+      
       setIsUpdating(true);
-      
-      // Here you would call your update API
-      // await APIDbHandler.UpdateFood(data);
-      
-      // For now, update local state
+
+      // Get the original food entry to preserve existing data
+      const originalFood = foodEntries.find(f => f.id === data.id);
+      if (!originalFood) {
+        throw new Error("Food entry not found");
+      }
+
+      // Create payload for APIHandler - it will handle the meal conversion
+      const updatePayload = {
+        Id: data.id as number,
+        FoodId: originalFood.foodId as number, // Use the correct Food ID from backend
+        UserId: userId as number,
+        Quantity: data.quantity,
+        Date: new Date(),
+        Meal: mapMealToEnum(data.meal) // Send Italian meal name - APIHandler will convert it
+      };
+
+      console.log(`🍽️ [FoodList] Sending updatePayload to APIHandler:`, updatePayload);
+
+      // Call update API - APIHandler will format it correctly for the backend
+      const response = await APIDbHandler.UpdateFood(updatePayload);
+      console.log("🍽️ [FoodList] UpdateFood API response:", response);
+
+      // Update local state
       const updatedFoods = foodEntries.map(food => {
         if (food.id === data.id) {
+          console.log(`🍽️ [FoodList] Updating food with ID: ${data.id}`);
+          console.log(`🍽️ [FoodList] Original food meal: '${food.meal}' -> New meal: '${data.meal}'`);
+          
           // Recalculate nutrition values based on new quantity
           const ratio = data.quantity / 100;
-          return {
+          const updatedFood = {
             ...food,
             quantity: data.quantity,
             meal: data.meal,
@@ -211,9 +269,14 @@ const FoodList: React.FC = () => {
             carbohydrates: Math.round(((food.carbohydrates / (food.quantity / 100)) * ratio) * 10) / 10,
             fats: Math.round(((food.fats / (food.quantity / 100)) * ratio) * 10) / 10,
           };
+          
+          console.log(`🍽️ [FoodList] Updated food:`, updatedFood);
+          return updatedFood;
         }
         return food;
       });
+
+      console.log(`🍽️ [FoodList] All updated foods:`, updatedFoods);
 
       setFoodEntries(updatedFoods);
       calculateDailyStats(updatedFoods);
@@ -236,11 +299,7 @@ const FoodList: React.FC = () => {
       // Use the foodId directly as it's now the correct UserFood ID
       const userFoodId = typeof foodId === 'string' ? parseInt(foodId) : foodId;
       
-      console.log("🗑️ Using UserFood ID for delete:", userFoodId);
-      console.log("🗑️ Calling APIDbHandler.DeleteFood with UserFood ID:", userFoodId);
-      
       const response = await APIDbHandler.DeleteFood(userFoodId);
-      console.log("🗑️ DeleteFood API response:", response);
       
       // Update local state
       const updatedFoods = foodEntries.filter(food => food.id !== foodId);

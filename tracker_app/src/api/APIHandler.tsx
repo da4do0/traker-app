@@ -1,5 +1,6 @@
 const endpointAPI = "http://localhost:5132/";
-import type { User } from "../types/User";
+import type { User} from "../types/User";
+import type {Food} from "../types/Food";
 
 const CALLS = [
   //LETTURA RFID
@@ -54,13 +55,13 @@ const CALLS = [
   {
     name: "UpdateFood",
     method: "PUT",
-    endpoint: "food/update/",
+    endpoint: "food/registration/",
     isAuthenticated: false,
   },
   {
     name: "DeleteFood",
     method: "DELETE",
-    endpoint: "food/",
+    endpoint: "food/registration/",
     isAuthenticated: false,
   },
   {
@@ -307,21 +308,46 @@ export class APIDbHandler {
     return response.json();
   }
 
-  static async UpdateFood(foodId: number, updateData: any) {
+  // Helper function to convert Italian meal names to C# enum values
+  static mapMealToEnum(italianMeal: string): number {
+    console.log(`🔄 [APIHandler] mapMealToEnum called with: ${italianMeal}`);
+    
+    const mealMap: { [key: string]: number } = {
+      "Colazione": 0,  // Breakfast
+      "Pranzo": 1,     // Lunch  
+      "Cena": 2,       // Dinner
+      "Spuntino": 3    // Snack
+    };
+    
+    const result = mealMap[italianMeal] || 3; // Default to Snack if not found
+    console.log(`🔄 [APIHandler] mapMealToEnum returning: ${result} for ${italianMeal}`);
+    return result;
+  }
+
+  static async UpdateFood(updateData: Food) {
     let call = this.getCall("UpdateFood");
     if (!call) throw new Error("Call UpdateFood not found");
-    const response = await fetch(endpointAPI + call.endpoint + foodId, {
+
+    
+    console.log(`🔄 [APIHandler] Sending userFoodPayload:`, updateData);
+    
+    const response = await fetch(endpointAPI + call.endpoint, {
       method: call.method,
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(updateData),
     });
+    
     if (!response.ok) {
       const errorText = await response.text();
+      console.error(`🔄 [APIHandler] UpdateFood error:`, errorText);
       throw new Error(errorText || "Errore durante l'aggiornamento del cibo");
     }
-    return response.json();
+    
+    const result = await response.json();
+    console.log(`🔄 [APIHandler] UpdateFood success:`, result);
+    return result;
   }
 
   static async DeleteFood(foodId: number) {
