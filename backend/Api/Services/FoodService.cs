@@ -87,7 +87,7 @@ namespace Api.Services
         public async Task<bool> AddFoodToUserAsync(int userId, int foodId, int quantity, string mealType)
         {
             Console.WriteLine($"🍽️ [Backend] AddFoodToUserAsync called with mealType: '{mealType}'");
-            
+
             if (!Enum.TryParse<UserFood.MealType>(mealType, true, out var parsedMealType))
             {
                 Console.WriteLine($"🍽️ [Backend] Failed to parse mealType: '{mealType}'. Valid values are: {string.Join(", ", Enum.GetNames<UserFood.MealType>())}");
@@ -101,11 +101,11 @@ namespace Api.Services
         public async Task<bool> AddFoodToUserAsync(int userId, int foodId, int quantity, UserFood.MealType mealType)
         {
             Console.WriteLine($"🍽️ [Backend] AddFoodToUserAsync (enum overload) called with userId: {userId}, foodId: {foodId}, quantity: {quantity}, mealType: {mealType} (numeric: {(int)mealType})");
-            
+
             var user = await _context.Users.FindAsync(userId);
             var food = await _context.Foods.FindAsync(foodId);
 
-            if (user == null || food == null) 
+            if (user == null || food == null)
             {
                 Console.WriteLine($"🍽️ [Backend] User or Food not found. User: {user != null}, Food: {food != null}");
                 return false;
@@ -124,7 +124,7 @@ namespace Api.Services
 
             _context.UserFoods.Add(userFood);
             await _context.SaveChangesAsync();
-            
+
             Console.WriteLine($"🍽️ [Backend] UserFood entry saved successfully");
             return true;
         }
@@ -152,9 +152,9 @@ namespace Api.Services
         public async Task<bool> RemoveUserFoodAsync(int userFoodId)
         {
             Console.WriteLine($"🗑️ [Backend] Starting RemoveUserFoodAsync for userFoodId: {userFoodId}");
-            
+
             var userFood = await _context.UserFoods.FindAsync(userFoodId);
-            if (userFood == null) 
+            if (userFood == null)
             {
                 Console.WriteLine($"🗑️ [Backend] UserFood with ID {userFoodId} not found in database");
                 return false;
@@ -164,10 +164,10 @@ namespace Api.Services
 
             _context.UserFoods.Remove(userFood);
             Console.WriteLine($"🗑️ [Backend] UserFood marked for removal");
-            
+
             var saveResult = await _context.SaveChangesAsync();
             Console.WriteLine($"🗑️ [Backend] SaveChanges result: {saveResult} records affected");
-            
+
             Console.WriteLine($"🗑️ [Backend] RemoveUserFoodAsync completed successfully for userFoodId: {userFoodId}");
             return true;
         }
@@ -185,7 +185,7 @@ namespace Api.Services
         public async Task<Object> GetUserFoodListAsync(int userId)
         {
             Console.WriteLine($"📝 [Backend] GetUserFoodListAsync called for userId: {userId}");
-            
+
             var foods = await _context.UserFoods
                 .Where(uf => uf.UserId == userId && uf.Date.Date == DateTime.Now.Date)
                 .Include(uf => uf.Food)
@@ -208,12 +208,27 @@ namespace Api.Services
                 .ToListAsync();
 
             Console.WriteLine($"📝 [Backend] Retrieved {foods.Count} food entries for userId: {userId}");
-            foreach(var food in foods)
+            foreach (var food in foods)
             {
                 Console.WriteLine($"📝 [Backend] UserFood ID: {food.GetType().GetProperty("Id")?.GetValue(food)}, Food Name: {food.GetType().GetProperty("Name")?.GetValue(food)}, FoodId: {food.GetType().GetProperty("FoodId")?.GetValue(food)}");
             }
 
             return foods;
+        }
+
+        public async Task<bool> CreateNewFood(Food food)
+        {
+            try
+            {
+                _context.Foods.Add(food);
+                var result = await _context.SaveChangesAsync();
+                return result > 0; 
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Errore durante la creazione del cibo: {ex.Message}");
+                return false;
+            }
         }
     }
 }

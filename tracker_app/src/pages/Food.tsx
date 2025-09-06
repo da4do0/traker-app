@@ -9,6 +9,7 @@ import type { FoodDetailProps, FoodDetailHover, FoodDetailBarcode } from "../typ
 import FoodDetail from "../components/FoodDetail";
 import FoodForm from "../components/FoodForm";
 import BarcodeFinder from "../components/BarcodeFinder";
+import CustomFoodForm from "../components/CustomFoodForm";
 
 const Food: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -16,6 +17,7 @@ const Food: React.FC = () => {
   const [foodForm, setFoodForm] = useState<boolean>(false);
   const [foodDetailHover, setFoodDetailHover] = useState(null);
   const [cameraActive, setCameraActive] = useState(false);
+  const [showCustomForm, setShowCustomForm] = useState(false);
 
   const searchFoodQuery = async (query: string) => {
     try {
@@ -243,10 +245,13 @@ const Food: React.FC = () => {
             Non trovi l'alimento che cerchi? Creane uno personalizzato con i
             valori nutrizionali specifici.
           </span>
-          <div className="flex items-center justify-center bg-orange-500 gap-1 py-2 rounded-lg">
+          <button 
+            onClick={() => setShowCustomForm(true)}
+            className="flex items-center justify-center bg-orange-500 hover:bg-orange-600 gap-1 py-2 rounded-lg transition-colors cursor-pointer"
+          >
             <Plus color="white" />
             <span className="text-white font-medium">Crea Nuovo Alimento</span>
-          </div>
+          </button>
           <ButtonContainer color="gray" link="">
             <span className="text-white">Suggerimento</span>
             <span className="text-white/70 text-[10px]">
@@ -269,6 +274,16 @@ const Food: React.FC = () => {
             setSearchQuery(code);
             searchFoodBarcode(code);
             setCameraActive(false);
+          }}
+        />
+      )}
+
+      {showCustomForm && (
+        <CustomFoodForm 
+          onClose={() => setShowCustomForm(false)}
+          onFoodCreated={(food) => {
+            console.log("Custom food created:", food);
+            // Optionally refresh the food list or show success message
           }}
         />
       )}

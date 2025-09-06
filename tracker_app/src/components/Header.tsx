@@ -28,7 +28,7 @@ const Header: React.FC = () => {
           navigate("/");
         }}
       >
-        <Home color="white" size={25} />
+        <img src="/logo.png" alt="FoodTracker Logo" className="aspect-square w-[100px] cursor-pointer hover:opacity-80 transition-opacity"/>
       </div>
 
       <div className="flex items-center gap-2">

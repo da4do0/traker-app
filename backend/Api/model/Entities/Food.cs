@@ -10,7 +10,7 @@ namespace Api.model
         public int Proteins { get; set; }
         public int Carbohydrates { get; set; }
         public int Fats { get; set; }
-        public string code { get; set; } = string.Empty;
+        public string? code { get; set; } = string.Empty;
 
         // Navigation property per la relazione N:N con User
         public virtual ICollection<UserFood> UserFoods { get; set; } = new List<UserFood>();

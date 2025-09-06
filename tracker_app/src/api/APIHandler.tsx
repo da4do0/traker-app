@@ -1,6 +1,6 @@
 const endpointAPI = "http://localhost:5132/";
 import type { User} from "../types/User";
-import type {Food} from "../types/Food";
+import type {Food, FoodData} from "../types/Food";
 
 const CALLS = [
   //LETTURA RFID
@@ -44,6 +44,12 @@ const CALLS = [
     name: "AddFood",
     method: "POST",
     endpoint: "food/add",
+    isAuthenticated: false,
+  },
+  {
+    name: "AddCustomFood",
+    method: "POST",
+    endpoint: "food",
     isAuthenticated: false,
   },
   {
@@ -277,6 +283,22 @@ export class APIDbHandler {
 
   static async AddFood(food: any) {
     let call = this.getCall("AddFood");
+    if (!call) throw new Error("Call AddFood not found");
+    const response = await fetch(endpointAPI + call.endpoint, {
+      method: call.method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(food),
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || "Errore durante l'aggiunta del cibo");
+    }
+    return response.json();
+  }
+  static async AddCustomFood(food: FoodData) {
+    let call = this.getCall("AddCustomFood");
     if (!call) throw new Error("Call AddFood not found");
     const response = await fetch(endpointAPI + call.endpoint, {
       method: call.method,

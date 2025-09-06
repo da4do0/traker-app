@@ -121,12 +121,6 @@ namespace Api.Controllers
             }
         }
 
-        // Endpoint for searching food in the EU
-        // This Api dont need an API key, but you have to compile the User-agent header in the correct way
-        // Example: "{appName}/{version}"
-        // Endpoint for searching food in the EU
-        // This Api dont need an API key, but you have to compile the User-agent header in the correct way
-        // Example: "{appName}/{version}"
         [HttpGet("search/eu/{query}")]
         public async Task<ActionResult<object>> SearchEu(
             string query,
@@ -245,6 +239,13 @@ namespace Api.Controllers
             }
         }
 
+        [HttpPost]
+        public async Task<ActionResult<bool>> CreateFood([FromBody] Food food)
+        {
+            var response = await _foodService.CreateNewFood(food);
+            return response;   
+        }
+
         [HttpPost("add")]
         public async Task<IActionResult> AddFood([FromBody] FoodApi food)
         {
@@ -313,7 +314,6 @@ namespace Api.Controllers
             }
         }
 
-        // Aggiungo nuovi endpoint che usano il service
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Food>>> GetAllFoods()
         {

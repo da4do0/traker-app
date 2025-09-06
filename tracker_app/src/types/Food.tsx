@@ -18,6 +18,17 @@ export interface Food{
   Meal: number;
 }
 
+export interface FoodData{
+  Name: string;
+  Description: string;
+  Image: string;
+  Calories: number;
+  Proteins: number;
+  Carbohydrates: number;
+  Fats: number;
+  code?: string;
+}
+
 export interface FoodDetailProps {
   code: string;
   name: string;

@@ -20,5 +20,6 @@ namespace Api.Interfaces
         Task<bool> RemoveUserFoodAsync(int userFoodId);
         Task<Object> GetUserCaloriesAsync(int userId);
         Task<Object> GetUserFoodListAsync(int userId);
+        Task<bool> CreateNewFood(Food food);
     }
 }
