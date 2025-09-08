@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { TrendingUp, Calendar, BarChart3 } from 'lucide-react';
+import { LineChart } from '@mui/x-charts/LineChart';
+import { BarChart3, TrendingUp, Calendar } from 'lucide-react';
 import Container from './container';
 import ButtonContainer from './ButtonContainer';
 import type { ChartDataPoint } from '../types/Measurement';
@@ -46,48 +47,12 @@ export default function WeightChart({ data, className = "" }: WeightChartProps) 
         );
     }
 
-    const getMinMax = () => {
-        const weights = filteredData.map(d => d.weight);
-        const min = Math.min(...weights);
-        const max = Math.max(...weights);
-        const padding = (max - min) * 0.1;
-        return {
-            min: Math.max(0, min - padding),
-            max: max + padding,
-            range: max - min + 2 * padding
-        };
-    };
-
-    const { min, range } = getMinMax();
-    const chartWidth = 100;
-    const chartHeight = 60;
-
-    const getPointPosition = (point: ChartDataPoint, index: number) => {
-        const x = (index / (filteredData.length - 1)) * chartWidth;
-        const y = chartHeight - ((point.weight - min) / range) * chartHeight;
-        return { x, y };
-    };
-
-    const createPath = () => {
-        if (filteredData.length < 2) return '';
-        
-        let path = '';
-        filteredData.forEach((point, index) => {
-            const { x, y } = getPointPosition(point, index);
-            if (index === 0) {
-                path += `M ${x} ${y}`;
-            } else {
-                path += ` L ${x} ${y}`;
-            }
-        });
-        return path;
-    };
-
     const formatDate = (dateStr: string) => {
         const date = new Date(dateStr);
         return date.toLocaleDateString('it-IT', { 
             day: '2-digit', 
-            month: '2-digit' 
+            month: '2-digit',
+            year: selectedPeriod === '1A' ? '2-digit' : undefined
         });
     };
 
@@ -106,6 +71,42 @@ export default function WeightChart({ data, className = "" }: WeightChartProps) 
 
     const latest = getLatestWeight();
     const weightChange = getWeightChange();
+
+    // Prepare data for MUI X Charts - only use actual measurements
+    const chartData = filteredData.map(point => ({
+        x: new Date(point.date).getTime(),
+        weight: point.weight,
+        date: point.date
+    }));
+
+    const weightData = chartData.map(point => point.weight);
+    const xAxisData = chartData.map(point => point.x);
+    
+    // Get target from first point that has it (for the overlay line)
+    const targetValue = filteredData.find(point => point.target)?.target;
+
+    // Calculate min and max for better scaling
+    const allValues = targetValue ? [...weightData, targetValue] : weightData;
+    const minValue = Math.min(...allValues);
+    const maxValue = Math.max(...allValues);
+    const padding = (maxValue - minValue) * 0.1;
+    const yMin = Math.max(0, minValue - padding);
+    const yMax = maxValue + padding;
+
+    const series = [
+        {
+            id: 'weight',
+            label: 'Peso',
+            data: weightData,
+            color: '#3b82f6',
+            curve: 'linear' as const,
+            connectNulls: true,
+            showMark: true,
+        }
+    ];
+
+    // Don't add target as a separate series to avoid extra points
+    // The target will be shown as a reference line using yAxis configuration
 
     return (
         <Container css={`p-6 ${className}`}>
@@ -143,80 +144,99 @@ export default function WeightChart({ data, className = "" }: WeightChartProps) 
                 ))}
             </div>
 
-            {/* Chart */}
+            {/* MUI X Charts */}
             <div className="bg-gray-800/30 rounded-lg p-4 mb-4">
-                <svg 
-                    viewBox={`0 0 ${chartWidth} ${chartHeight}`} 
-                    className="w-full h-40"
-                    preserveAspectRatio="none"
-                >
-                    {/* Grid lines */}
-                    {[0, 25, 50, 75, 100].map((y) => (
-                        <line
-                            key={y}
-                            x1="0"
-                            y1={y * chartHeight / 100}
-                            x2={chartWidth}
-                            y2={y * chartHeight / 100}
-                            stroke="#374151"
-                            strokeWidth="0.5"
-                            opacity="0.3"
-                        />
-                    ))}
-
-                    {/* Target weight line */}
-                    {filteredData.find(d => d.target) && (
-                        <line
-                            x1="0"
-                            y1={chartHeight - ((filteredData[0].target! - min) / range) * chartHeight}
-                            x2={chartWidth}
-                            y2={chartHeight - ((filteredData[0].target! - min) / range) * chartHeight}
-                            stroke="#10b981"
-                            strokeWidth="1"
-                            strokeDasharray="3,3"
-                            opacity="0.6"
-                        />
+                <div style={{ width: '100%', height: '300px', position: 'relative' }}>
+                    <LineChart
+                        xAxis={[{
+                            id: 'time',
+                            data: xAxisData,
+                            scaleType: 'time',
+                            valueFormatter: (value: number) => {
+                                return formatDate(new Date(value).toISOString());
+                            },
+                            tickLabelStyle: {
+                                fill: '#9ca3af',
+                                fontSize: 12,
+                            },
+                        }]}
+                        yAxis={[{
+                            id: 'weight',
+                            min: yMin,
+                            max: yMax,
+                            valueFormatter: (value: number) => `${value.toFixed(1)} kg`,
+                            tickLabelStyle: {
+                                fill: '#9ca3af',
+                                fontSize: 12,
+                            },
+                        }]}
+                        series={series}
+                        width={undefined}
+                        height={300}
+                        margin={{ left: 60, right: 20, top: 20, bottom: 60 }}
+                        grid={{ vertical: true, horizontal: true }}
+                        sx={{
+                            '& .MuiChartsAxis-root': {
+                                '& .MuiChartsAxis-tickLabel': {
+                                    fill: '#9ca3af',
+                                },
+                                '& .MuiChartsAxis-line': {
+                                    stroke: '#4b5563',
+                                },
+                                '& .MuiChartsAxis-tick': {
+                                    stroke: '#4b5563',
+                                },
+                            },
+                            '& .MuiChartsGrid-root': {
+                                '& .MuiChartsGrid-line': {
+                                    stroke: '#374151',
+                                    strokeOpacity: 0.3,
+                                },
+                            },
+                            '& .MuiChartsLegend-root': {
+                                '& .MuiChartsLegend-label': {
+                                    fill: '#f9fafb !important',
+                                },
+                            },
+                        }}
+                    />
+                    
+                    {/* Target line overlay */}
+                    {targetValue && (
+                        <div 
+                            style={{
+                                position: 'absolute',
+                                top: `${20 + ((yMax - targetValue) / (yMax - yMin)) * 260}px`, // Calculate position based on chart dimensions
+                                left: '60px',
+                                right: '20px',
+                                height: '2px',
+                                backgroundColor: '#10b981',
+                                opacity: 0.8,
+                                borderStyle: 'dashed',
+                                borderWidth: '1px 0',
+                                borderColor: '#10b981',
+                                pointerEvents: 'none',
+                                zIndex: 10,
+                            }}
+                        >
+                            <div 
+                                style={{
+                                    position: 'absolute',
+                                    right: '10px',
+                                    top: '-10px',
+                                    fontSize: '12px',
+                                    color: '#10b981',
+                                    backgroundColor: '#1f2937',
+                                    padding: '2px 6px',
+                                    borderRadius: '4px',
+                                    border: '1px solid #10b981',
+                                }}
+                            >
+                                Obiettivo: {formatWeight(targetValue)}
+                            </div>
+                        </div>
                     )}
-
-                    {/* Weight line */}
-                    {filteredData.length > 1 && (
-                        <path
-                            d={createPath()}
-                            fill="none"
-                            stroke="#3b82f6"
-                            strokeWidth="2"
-                            className="drop-shadow-sm"
-                        />
-                    )}
-
-                    {/* Data points */}
-                    {filteredData.map((point, index) => {
-                        const { x, y } = getPointPosition(point, index);
-                        return (
-                            <g key={index}>
-                                <circle
-                                    cx={x}
-                                    cy={y}
-                                    r="2"
-                                    fill={point.isGoal ? "#10b981" : "#3b82f6"}
-                                    className="drop-shadow-sm"
-                                />
-                                {/* Latest point highlight */}
-                                {index === filteredData.length - 1 && !point.isGoal && (
-                                    <circle
-                                        cx={x}
-                                        cy={y}
-                                        r="4"
-                                        fill="none"
-                                        stroke="#3b82f6"
-                                        strokeWidth="2"
-                                        opacity="0.5"
-                                    />
-                                )}
-                            </g>
-                        );
-                    })}
-                </svg>
+                </div>
             </div>
 
             {/* Stats */}

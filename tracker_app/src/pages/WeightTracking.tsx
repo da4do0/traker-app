@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, BarChart3, Target, TrendingUp, AlertCircle } from "lucide-react";
+import { Plus, BarChart3 } from "lucide-react";
 import Header from "../components/Header";
 import ButtonContainer from "../components/ButtonContainer";
 import WeightProgressCard from "../components/WeightProgressCard";
@@ -21,7 +21,6 @@ import {
   calculateWeightProgress,
   calculateBodyMetrics,
   calculateWeightTrend,
-  prepareChartData,
 } from "../utils/weightCalculations";
 import { useUser } from "../hooks/UserInfo";
 import { APIDbHandler } from "../api/APIHandler";
@@ -73,10 +72,13 @@ export default function WeightTracking() {
     : calculateBodyMetrics(user.weight, user.height, user.sex);
 
   const weightTrend: WeightTrend = calculateWeightTrend(measurements, "month");
-  const chartData: ChartDataPoint[] = prepareChartData(
-    measurements,
-    user.targetWeight
-  );
+  const chartData: ChartDataPoint[] = measurements
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .map(m => ({
+      date: m.date,
+      weight: m.weight,
+      target: user.targetWeight
+    }));
 
   // Handle adding new measurement
   const handleAddMeasurement = async (measurementInput: MeasurementInput) => {
