@@ -1,6 +1,7 @@
 const endpointAPI = "http://localhost:5132/";
 import type { User} from "../types/User";
 import type {Food, FoodData} from "../types/Food";
+import type {Measurement} from '../types/Measurement';
 
 const CALLS = [
   //LETTURA RFID
@@ -74,6 +75,18 @@ const CALLS = [
     name: "FoodList",
     method: "GET",
     endpoint: "food/list/",
+    isAuthenticated: false,
+  },
+  {
+    name: "UserMisuration",
+    method: "GET",
+    endpoint: "weight/",
+    isAuthenticated: false,
+  },
+  {
+    name: "AddUserMisuration",
+    method: "POST",
+    endpoint: "weight/",
     isAuthenticated: false,
   },
 ];
@@ -400,6 +413,39 @@ export class APIDbHandler {
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(errorText || "Errore durante l'eliminazione del cibo");
+    }
+    return response.json();
+  }
+
+  static async UserMisuration(userId: number) {
+    let call = this.getCall("UserMisuration");
+    if (!call) throw new Error("Call DeleteFood not found");
+    const response = await fetch(endpointAPI + call.endpoint + userId, {
+      method: call.method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || "Errore durante l'eliminazione del cibo");
+    }
+    return response.json();
+  }
+
+  static async AddUserMisuration(misuration: Measurement) {
+    let call = this.getCall("AddUserMisuration");
+    if (!call) throw new Error("Call AddUserMisuration not found");
+    const response = await fetch(endpointAPI + call.endpoint, {
+      method: call.method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(misuration)
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || "Errore durante l'aggiunta della misurazione");
     }
     return response.json();
   }

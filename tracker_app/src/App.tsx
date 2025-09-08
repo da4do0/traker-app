@@ -8,6 +8,7 @@ import Food from './pages/Food';
 import FoodDetailPage from './pages/FoodDetailPage';
 import Register from './pages/Register';
 import FoodList from './pages/FoodList';
+import WeightTracking from './pages/WeightTracking';
 
 const App: React.FC = () => {
   return (
@@ -42,6 +43,13 @@ const App: React.FC = () => {
                 element={
                 <ProtectedRoute>
                     <FoodList />
+                </ProtectedRoute>
+                }/>
+            <Route 
+                path="/weight" 
+                element={
+                <ProtectedRoute>
+                    <WeightTracking />
                 </ProtectedRoute>
                 }/>
             <Route path="*" element={<NotFound />} />

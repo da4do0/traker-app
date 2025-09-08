@@ -10,6 +10,7 @@ builder.Services.AddDbContext<Api.ApiDbContext>(options =>
 
 // Register services
 builder.Services.AddScoped<IFoodService, FoodService>();
+builder.Services.AddScoped<IWeightService, WeightService>();
 builder.Services.AddScoped<ICalorieCalculationService, CalorieCalculationService>();
 
 builder.Services.AddHttpClient();

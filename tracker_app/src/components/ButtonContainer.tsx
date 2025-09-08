@@ -4,6 +4,9 @@ interface ButtonContainerProps {
   children: React.ReactNode;
   color?: 'emerald' | 'yellow' | 'blue' | 'purple' | 'red' | 'green' | 'orange' | 'indigo' | 'pink' | 'gray';
   link?: string;
+  onClick?: () => void;
+  className?: string;
+  disabled?: boolean;
 }
 
 const colorMap: Record<string, string> = {
@@ -19,17 +22,44 @@ const colorMap: Record<string, string> = {
   gray: '#6B7280',    // Tailwind gray-500
 };
 
-const ButtonContainer: React.FC<ButtonContainerProps> = ({ children, color = 'CCCCCC', link = '' }) => {
-  const hex = colorMap[color] || '#CCCCCC';
+const ButtonContainer: React.FC<ButtonContainerProps> = ({ 
+  children, 
+  color = 'gray', 
+  link = '', 
+  onClick, 
+  className = '',
+  disabled = false 
+}) => {
+  const hex = colorMap[color] || '#6B7280';
+  
+  const baseClasses = `rounded-xl border p-4 flex flex-col items-center justify-center min-h-[70px] transition-all ${className}`;
+  const interactiveClasses = disabled 
+    ? 'opacity-50 cursor-not-allowed' 
+    : 'hover:opacity-80 cursor-pointer';
+
+  const style = {
+    backgroundColor: hex + '1A', // circa 10% di opacità
+    borderColor: hex + '66',     // circa 40% di opacità
+  };
+
+  if (onClick) {
+    return (
+      <button
+        onClick={disabled ? undefined : onClick}
+        className={`${baseClasses} ${interactiveClasses}`}
+        style={style}
+        disabled={disabled}
+      >
+        {children}
+      </button>
+    );
+  }
 
   return (
     <a
       href={`/${link}`}
-      className="rounded-xl border p-4 flex flex-col items-center justify-center min-h-[70px]"
-      style={{
-        backgroundColor: hex + '1A', // circa 10% di opacità
-        borderColor: hex + '66',     // circa 40% di opacità
-      }}
+      className={`${baseClasses} ${interactiveClasses}`}
+      style={style}
     >
       {children}
     </a>

@@ -9,7 +9,7 @@ namespace Api.model
         public float Height { get; set; }
         public float IMC { get; set; }
         public float FFMI { get; set; }
-        public virtual User User { get; set; } = null!;
+        public virtual User? User { get; set; } = null!;
 
     }
 }

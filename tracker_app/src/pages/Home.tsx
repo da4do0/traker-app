@@ -159,7 +159,7 @@ const Home: React.FC = () => {
           <span className="text-blue-200 text-sm">Acqua</span>
         </ButtonContainer>
 
-        <ButtonContainer color="purple" link="">
+        <ButtonContainer color="purple" onClick={() => navigate("/weight")}>
           <Scale className="text-purple-300 mb-1" />
           <span className="text-purple-200 text-sm">Peso</span>
         </ButtonContainer>
@@ -259,7 +259,7 @@ const Home: React.FC = () => {
         </Container>
 
         {/* Peso */}
-        <Container>
+        <Container onClick={() => navigate("/weight")} css="cursor-pointer">
           <div className="flex items-center gap-2 text-purple-300 font-semibold text-lg">
             <Scale className="w-5 h-5" />
             Peso & Andamento
@@ -267,11 +267,17 @@ const Home: React.FC = () => {
           <div className="text-3xl font-bold text-white">{weight}kg</div>
           <div className="text-xs text-gray-400">Peso attuale</div>
           <div className="flex items-center gap-2 mt-2">
-            <button className="bg-gray-800 border border-gray-700 hover:bg-purple-900 text-white font-semibold py-2 px-4 rounded-lg flex items-center gap-2 transition-all">
-              <Scale className="w-4 h-4" /> Aggiorna peso
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate("/weight");
+              }}
+              className="bg-gray-800 border border-gray-700 hover:bg-purple-900 text-white font-semibold py-2 px-4 rounded-lg flex items-center gap-2 transition-all"
+            >
+              <Scale className="w-4 h-4" /> Vai al monitoraggio
             </button>
             <span className="text-xs text-gray-500">
-              0.0kg questa settimana
+              Traccia i progressi
             </span>
           </div>
         </Container>
@@ -336,9 +342,12 @@ const Home: React.FC = () => {
         <button className="flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-full w-12 h-12 shadow-lg -mt-8 border-4 border-gray-950">
           <Plus className="w-7 h-7" />
         </button>
-        <button className="flex flex-col items-center text-gray-400">
-          <BarChart2 className="w-6 h-6" />
-          <span className="text-xs">Statistiche</span>
+        <button 
+          onClick={() => navigate("/weight")}
+          className="flex flex-col items-center text-gray-400 hover:text-purple-400 transition-colors"
+        >
+          <Scale className="w-6 h-6" />
+          <span className="text-xs">Peso</span>
         </button>
         <button className="flex flex-col items-center text-gray-400">
           <UserCircle className="w-6 h-6" />
