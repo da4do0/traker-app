@@ -5,7 +5,11 @@ import ButtonContainer from "../components/ButtonContainer";
 import { Search, Zap, Clock, ChefHat, Plus, Camera } from "lucide-react";
 import FoodCard from "../components/FoodCard";
 import { APIDbHandler } from "../api/APIHandler";
-import type { FoodDetailProps, FoodDetailHover, FoodDetailBarcode } from "../types/Food";
+import type {
+  FoodDetailProps,
+  FoodDetailHover,
+  FoodDetailBarcode,
+} from "../types/Food";
 import FoodDetail from "../components/FoodDetail";
 import FoodForm from "../components/FoodForm";
 import BarcodeFinder from "../components/BarcodeFinder";
@@ -53,8 +57,10 @@ const Food: React.FC = () => {
   const searchFoodBarcode = async (barcode: string) => {
     try {
       // Padding del barcode a 13 cifre se necessario
-      const paddedBarcode = barcode.padStart(13, '0');
-      const response: FoodDetailBarcode = await APIDbHandler.SearchFoodBarcode(paddedBarcode);
+      const paddedBarcode = barcode.padStart(13, "0");
+      const response: FoodDetailBarcode = await APIDbHandler.SearchFoodBarcode(
+        paddedBarcode
+      );
 
       if (response?.found && response?.product) {
         const p = response.product;
@@ -156,7 +162,7 @@ const Food: React.FC = () => {
           </Container>
 
           {/* recent food container */}
-          <Container>
+          {/* <Container>
             <div className="flex items-center justify-between gap-2 ">
               <div className="flex items-center gap-2">
                 <div className="bg-blue-900/50 rounded-lg w-fit p-2">
@@ -172,7 +178,7 @@ const Food: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <span className=" text-white">In arrivo</span>
 
-              {/* <FoodCard
+               <FoodCard
                 name="Petto di Pollo"
                 type="Proteine"
                 typeColor="red"
@@ -225,9 +231,9 @@ const Food: React.FC = () => {
                 protein={10}
                 carbs={3.6}
                 fat={0.4}
-              /> */}
+              /> 
             </div>
-          </Container>
+          </Container> */}
         </div>
 
         {/* create food container */}
@@ -245,7 +251,7 @@ const Food: React.FC = () => {
             Non trovi l'alimento che cerchi? Creane uno personalizzato con i
             valori nutrizionali specifici.
           </span>
-          <button 
+          <button
             onClick={() => setShowCustomForm(true)}
             className="flex items-center justify-center bg-orange-500 hover:bg-orange-600 gap-1 py-2 rounded-lg transition-colors cursor-pointer"
           >
@@ -268,8 +274,8 @@ const Food: React.FC = () => {
       )}
 
       {cameraActive && (
-        <BarcodeFinder 
-          onClose={() => setCameraActive(false)} 
+        <BarcodeFinder
+          onClose={() => setCameraActive(false)}
           onCodeFound={(code) => {
             setSearchQuery(code);
             searchFoodBarcode(code);
@@ -279,7 +285,7 @@ const Food: React.FC = () => {
       )}
 
       {showCustomForm && (
-        <CustomFoodForm 
+        <CustomFoodForm
           onClose={() => setShowCustomForm(false)}
           onFoodCreated={(food) => {
             console.log("Custom food created:", food);

@@ -49,7 +49,6 @@ const Home: React.FC = () => {
           setCalories(0);
           setMacros({ carbs: 0, proteins: 0, fats: 0 });
         }
-
       }
     } catch (error) {
       console.error(
@@ -74,7 +73,6 @@ const Home: React.FC = () => {
       (acc: any, item: any) => {
         const consumedQuantity = item.quantity;
         const multiplier = consumedQuantity / 100; // Converti da quantità a percentuale
-
 
         // Accumula macronutrienti basandosi sulla quantità consumata
         acc.carbs += item.food.carbohydrates * multiplier;
@@ -143,21 +141,21 @@ const Home: React.FC = () => {
       <Header />
 
       {/* Azioni rapide */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <section className="grid grid-cols-2 gap-4 mb-6">
         <ButtonContainer color="emerald" link="food">
           <Plus className="text-emerald-400 mb-1" />
           <span className="text-emerald-200 text-sm">Alimento</span>
         </ButtonContainer>
 
-        <ButtonContainer color="yellow" link="">
+        {/*<ButtonContainer color="yellow" link="">
           <CupSoda className="text-yellow-300 mb-1" />
           <span className="text-yellow-200 text-sm">Bevanda</span>
         </ButtonContainer>
 
-        <ButtonContainer color="blue" link="">
+         <ButtonContainer color="blue" link="">
           <Droplet className="text-blue-300 mb-1" />
           <span className="text-blue-200 text-sm">Acqua</span>
-        </ButtonContainer>
+        </ButtonContainer> */}
 
         <ButtonContainer color="purple" onClick={() => navigate("/weight")}>
           <Scale className="text-purple-300 mb-1" />
@@ -238,7 +236,7 @@ const Home: React.FC = () => {
         </Container>
 
         {/* Idratazione */}
-        <Container>
+        {/*  <Container>
           <div className="flex items-center gap-2 text-blue-400 font-semibold text-lg">
             <Droplet className="w-5 h-5" />
             Idratazione Totale
@@ -256,7 +254,7 @@ const Home: React.FC = () => {
           <div className="text-xs text-gray-400 flex justify-between">
             <span>di 2555ml</span>
           </div>
-        </Container>
+        </Container> */}
 
         {/* Peso */}
         <Container onClick={() => navigate("/weight")} css="cursor-pointer">
@@ -267,7 +265,7 @@ const Home: React.FC = () => {
           <div className="text-3xl font-bold text-white">{weight}kg</div>
           <div className="text-xs text-gray-400">Peso attuale</div>
           <div className="flex items-center gap-2 mt-2">
-            <button 
+            <button
               onClick={(e) => {
                 e.stopPropagation();
                 navigate("/weight");
@@ -276,9 +274,7 @@ const Home: React.FC = () => {
             >
               <Scale className="w-4 h-4" /> Vai al monitoraggio
             </button>
-            <span className="text-xs text-gray-500">
-              Traccia i progressi
-            </span>
+            <span className="text-xs text-gray-500">Traccia i progressi</span>
           </div>
         </Container>
 
@@ -342,7 +338,7 @@ const Home: React.FC = () => {
         <button className="flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-full w-12 h-12 shadow-lg -mt-8 border-4 border-gray-950">
           <Plus className="w-7 h-7" />
         </button>
-        <button 
+        <button
           onClick={() => navigate("/weight")}
           className="flex flex-col items-center text-gray-400 hover:text-purple-400 transition-colors"
         >
