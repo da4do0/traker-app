@@ -24,7 +24,6 @@ const EditFoodModal: React.FC<EditFoodModalProps> = ({
 
   useEffect(() => {
     if (food) {
-      console.log("EditFoodModal opened for food:", food);
       setQuantity(food.quantity);
       setSelectedMeal(food.meal);
       setErrors({});
@@ -48,9 +47,6 @@ const EditFoodModal: React.FC<EditFoodModalProps> = ({
   const handleSave = async () => {
     if (!food) return;
     
-    console.log(`🍽️ [EditModal] handleSave called for food:`, food);
-    console.log(`🍽️ [EditModal] Current values - quantity: ${quantity}, selectedMeal: ${selectedMeal}`);
-    
     const quantityError = validateQuantity(quantity);
     if (quantityError) {
       setErrors({ quantity: quantityError });
@@ -62,9 +58,6 @@ const EditFoodModal: React.FC<EditFoodModalProps> = ({
       quantity,
       meal: selectedMeal
     };
-
-    console.log(`🍽️ [EditModal] Saving data:`, data);
-    console.log(`🍽️ [EditModal] selectedMeal value: '${selectedMeal}' (type: ${typeof selectedMeal})`);
 
     await onSave(data);
   };

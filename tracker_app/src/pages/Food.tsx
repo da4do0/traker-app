@@ -87,7 +87,6 @@ const Food: React.FC = () => {
 
         setQueryFood([formatted]);
       } else {
-        console.log("Prodotto non trovato");
         setQueryFood([]);
       }
     } catch (error) {
@@ -97,7 +96,6 @@ const Food: React.FC = () => {
   };
 
   const handleFoodHover = (food: any) => {
-    console.log("Food hovered:", food);
     setFoodDetailHover(food);
   };
 
@@ -289,7 +287,6 @@ const Food: React.FC = () => {
           onClose={() => setShowCustomForm(false)}
           onFoodCreated={(food) => {
             console.log("Custom food created:", food);
-            // Optionally refresh the food list or show success message
           }}
         />
       )}

@@ -116,7 +116,6 @@ const MealSection: React.FC<MealSectionProps> = ({
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        console.log("🗑️ Delete button clicked for food:", food.name, "ID:", food.id);
                         onDeleteFood(food);
                       }}
                       className="p-2 text-gray-400 hover:text-red-400 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"

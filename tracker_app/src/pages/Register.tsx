@@ -183,7 +183,6 @@ const Register: React.FC = () => {
 
     if (response) {
       setError("");
-      console.log(response, "Nuovo utente creato");
       setUsername(username);
       localStorage.setItem("username", username);
       // Login automatico dopo la registrazione
@@ -209,7 +208,6 @@ const Register: React.FC = () => {
       setError("Username già esistente. Scegline un altro.");
       return false;
     }else {
-      console.log(response, "Esiste utente");
       setCurrentScreen(1);
     }
   };

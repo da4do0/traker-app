@@ -345,7 +345,6 @@ export class APIDbHandler {
 
   // Helper function to convert Italian meal names to C# enum values
   static mapMealToEnum(italianMeal: string): number {
-    console.log(`🔄 [APIHandler] mapMealToEnum called with: ${italianMeal}`);
     
     const mealMap: { [key: string]: number } = {
       "Colazione": 0,  // Breakfast
@@ -355,7 +354,6 @@ export class APIDbHandler {
     };
     
     const result = mealMap[italianMeal] || 3; // Default to Snack if not found
-    console.log(`🔄 [APIHandler] mapMealToEnum returning: ${result} for ${italianMeal}`);
     return result;
   }
 
@@ -363,8 +361,6 @@ export class APIDbHandler {
     let call = this.getCall("UpdateFood");
     if (!call) throw new Error("Call UpdateFood not found");
 
-    
-    console.log(`🔄 [APIHandler] Sending userFoodPayload:`, updateData);
     
     const response = await fetch(endpointAPI + call.endpoint, {
       method: call.method,
@@ -381,7 +377,6 @@ export class APIDbHandler {
     }
     
     const result = await response.json();
-    console.log(`🔄 [APIHandler] UpdateFood success:`, result);
     return result;
   }
 

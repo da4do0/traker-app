@@ -1,10 +1,10 @@
 import React, { useEffect } from "react";
 import { UserCircle, Home } from "lucide-react";
-import { useUser } from "../hooks/UserInfo";
+import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 
 const Header: React.FC = () => {
-  const { username } = useUser();
+  const { username } = useAuth();
   const [date, setDate] = React.useState<string>("");
 
   const navigate = useNavigate();

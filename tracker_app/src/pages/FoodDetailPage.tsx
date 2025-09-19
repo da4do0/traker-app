@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Header from "../components/Header";
 import Container from "../components/container";
+import FoodForm from "../components/FoodForm";
 import { ArrowLeft, Plus, Info, AlertTriangle, Award, Zap, Scale, Clock } from "lucide-react";
 import type { FoodDetailHover } from "../types/Food";
 
@@ -9,6 +10,13 @@ const FoodDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const food = location.state?.food as FoodDetailHover;
+  const [showFoodForm, setShowFoodForm] = useState(false);
+
+  const handleFoodAdded = () => {
+    setShowFoodForm(false);
+    // Optionally navigate back to home or show success message
+    navigate("/");
+  };
 
   if (!food) {
     navigate("/food");
@@ -113,7 +121,10 @@ const FoodDetailPage: React.FC = () => {
                 </div>
 
                 {/* Add to Diary Button */}
-                <button className="w-full bg-green-600 hover:bg-green-700 transition-colors rounded-lg p-4 flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setShowFoodForm(true)}
+                  className="w-full bg-green-600 hover:bg-green-700 transition-colors rounded-lg p-4 flex items-center justify-center gap-2"
+                >
                   <Plus size={20} className="text-white" />
                   <span className="text-white font-semibold text-lg">Aggiungi al Diario</span>
                 </button>
@@ -203,6 +214,17 @@ const FoodDetailPage: React.FC = () => {
           </Container>
         </div>
       </main>
+
+      {/* Food Form Modal */}
+      {showFoodForm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <FoodForm
+            food={food}
+            back={() => setShowFoodForm(false)}
+            onSuccess={handleFoodAdded}
+          />
+        </div>
+      )}
     </div>
   );
 };

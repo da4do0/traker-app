@@ -87,7 +87,6 @@ const CustomFoodForm: React.FC<CustomFoodFormProps> = ({ onClose, onFoodCreated 
       const response = await APIDbHandler.AddCustomFood(foodData);
       
       if (response) {
-        console.log("Custom food created successfully");
         onFoodCreated?.(foodData);
         onClose();
       } else {

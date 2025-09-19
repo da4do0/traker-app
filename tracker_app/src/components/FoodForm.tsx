@@ -3,35 +3,17 @@ import Container from "./container";
 import { APIDbHandler } from "../api/APIHandler";
 import { X, Utensils, Plus, Minus } from "lucide-react";
 import {useUser} from "../hooks/UserInfo";
+import type { FoodDetailHover } from "../types/Food";
 
-// TypeScript interfaces
-interface NutritionInfo {
-  calories100g: number;
-  protein100g: number;
-  carbs100g: number;
-  fat100g: number;
-}
-
-interface Food {
-  code: string;
-  name: string;
-  brands: string;
-  categories: string;
-  imageUrl: string;
-  nutritionGrade: string;
-  novaGroup: string;
-  servingSize: string;
-  nutrition: NutritionInfo;
-  ingredients: string;
-  allergens: string;
-}
+// TypeScript interfaces - Using imported FoodDetailHover instead
 
 interface FoodFormProps {
-  food: Food;
-  back: (arg: any) => void; 
+  food: FoodDetailHover;
+  back: (arg: any) => void;
+  onSuccess?: () => void;
 }
 
-const FoodForm: React.FC<FoodFormProps> = ({food, back}) => {
+const FoodForm: React.FC<FoodFormProps> = ({food, back, onSuccess}) => {
 
   const [quantity, setQuantity] = useState("100");
   const [usernameLocal, setUsernameLocal] = useState("");
@@ -40,15 +22,9 @@ const FoodForm: React.FC<FoodFormProps> = ({food, back}) => {
   const { username, setUsername } = useUser();
 
   useEffect(()=>{
-    console.log("FoodForm mounted with food:", food);
-    console.log("Username from hook:", username);
-  }, [])
-
-  useEffect(()=>{
     if(username === ""){
       console.error("Username is empty, please login first.");
       if(localStorage.getItem("username")){
-        console.log("Setting username from localStorage: " + localStorage.getItem("username"));
         setUsername(localStorage.getItem("username") || "");
         setUsernameLocal(localStorage.getItem("username") || "");
       }
@@ -126,10 +102,15 @@ const FoodForm: React.FC<FoodFormProps> = ({food, back}) => {
       Meal: mealType,
     };
 
-    const response = await APIDbHandler.AddFood(foodData);
-    if(response){
-      console.log("Food added successfully");
-      back(null);
+    try {
+      const response = await APIDbHandler.AddFood(foodData);
+      if(response){
+        onSuccess?.();
+        back(null);
+      }
+    } catch (error) {
+      console.error("Error adding food:", error);
+      // You could add error handling here (toast, alert, etc.)
     }
   }
 
@@ -269,7 +250,7 @@ const FoodForm: React.FC<FoodFormProps> = ({food, back}) => {
                 </p>
                 <p>
                   <span className="text-gray-400">Allergeni:</span>{" "}
-                  {food.allergens}
+                  {food.allergens?.length > 0 ? food.allergens.join(", ") : "Nessun allergene"}
                 </p>
               </div>
             </div>

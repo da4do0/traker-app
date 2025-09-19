@@ -2,9 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Plus, 
-  Filter, 
   Search,
-  RefreshCw,
   Calendar,
   UserCircle,
   BarChart2,
@@ -26,7 +24,6 @@ import type {
   EditFoodData, 
   MealType
 } from "../types/FoodList";
-import type {Food} from "../types/Food";
 
 // Backend API response type
 interface BackendFoodItem {
@@ -52,7 +49,6 @@ const MEAL_TYPES: MealType[] = [
   { id: "Spuntino", name: "Spuntini", emoji: "🍎", color: "green" }
 ] as const;
 
-// Helper function to convert meal number to meal name
 const getMealName = (mealNumber: number): string => {
   
   let result: string;
@@ -67,20 +63,6 @@ const getMealName = (mealNumber: number): string => {
   return result;
 };
 
-// Helper function to convert meal name to meal number (for API calls)
-const getMealNumber = (mealName: string): number => {
-  
-  let result: number;
-  switch (mealName) {
-    case "Colazione": result = 0; break;  // Breakfast
-    case "Pranzo": result = 1; break;     // Lunch
-    case "Cena": result = 2; break;       // Dinner
-    case "Spuntino": result = 3; break;   // Snack
-    default: result = 3; break; // Default to Snack
-  }
-
-  return result;
-};
 
 const FoodList: React.FC = () => {
   const navigate = useNavigate();
@@ -101,7 +83,6 @@ const FoodList: React.FC = () => {
     remainingCalories: 2000,
     progressPercentage: 0
   });
-  const [showFilters, setShowFilters] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -208,7 +189,6 @@ const FoodList: React.FC = () => {
   };
 
   const mapMealToEnum = (italianMeal: string): number => {
-    console.log(`🔄 [APIHandler] mapMealToEnum called with: ${italianMeal}`);
     
     const mealMap: { [key: string]: number } = {
       "Colazione": 0,  // Breakfast
@@ -218,15 +198,12 @@ const FoodList: React.FC = () => {
     };
     
     const result = mealMap[italianMeal] || 3; // Default to Snack if not found
-    console.log(`🔄 [APIHandler] mapMealToEnum returning: ${result} for ${italianMeal}`);
     return result;
   }
 
   // Handle food editing
   const handleEditFood = async (data: EditFoodData) => {
     try {
-      console.log(`🍽️ [FoodList] handleEditFood called with data:`, data);
-      console.log(`🍽️ [FoodList] data.meal value: '${data.meal}' (type: ${typeof data.meal})`);
       
       setIsUpdating(true);
 
@@ -246,17 +223,13 @@ const FoodList: React.FC = () => {
         Meal: mapMealToEnum(data.meal) // Send Italian meal name - APIHandler will convert it
       };
 
-      console.log(`🍽️ [FoodList] Sending updatePayload to APIHandler:`, updatePayload);
 
       // Call update API - APIHandler will format it correctly for the backend
       const response = await APIDbHandler.UpdateFood(updatePayload);
-      console.log("🍽️ [FoodList] UpdateFood API response:", response);
 
       // Update local state
       const updatedFoods = foodEntries.map(food => {
         if (food.id === data.id) {
-          console.log(`🍽️ [FoodList] Updating food with ID: ${data.id}`);
-          console.log(`🍽️ [FoodList] Original food meal: '${food.meal}' -> New meal: '${data.meal}'`);
           
           // Recalculate nutrition values based on new quantity
           const ratio = data.quantity / 100;
@@ -270,13 +243,11 @@ const FoodList: React.FC = () => {
             fats: Math.round(((food.fats / (food.quantity / 100)) * ratio) * 10) / 10,
           };
           
-          console.log(`🍽️ [FoodList] Updated food:`, updatedFood);
           return updatedFood;
         }
         return food;
       });
 
-      console.log(`🍽️ [FoodList] All updated foods:`, updatedFoods);
 
       setFoodEntries(updatedFoods);
       calculateDailyStats(updatedFoods);
@@ -353,14 +324,6 @@ const FoodList: React.FC = () => {
         {/* Page Title */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-white">Il Mio Diario</h1>
-          <div className="flex items-center gap-2">
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => { setSelectedDate(e.target.value); loadFoodEntries(); }}
-              className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-2 text-white text-sm focus:border-emerald-500 focus:outline-none"
-            />
-          </div>
         </div>
 
         {/* Error Display */}

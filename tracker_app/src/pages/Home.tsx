@@ -121,14 +121,6 @@ const Home: React.FC = () => {
   }, [userId]);
 
   useEffect(() => {
-    console.log(
-      "Auth state - isAuthenticated:",
-      isAuthenticated,
-      "loading:",
-      loading,
-      "userId:",
-      userId
-    );
     if (!loading && !isAuthenticated) {
       navigate("/login");
     }
