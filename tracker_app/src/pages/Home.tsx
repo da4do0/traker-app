@@ -21,6 +21,8 @@ const Home: React.FC = () => {
   const [calories, setCalories] = useState(0); // Calorie consumate oggi
   const [totalCalories, setTotalCalories] = useState(0); // Obiettivo calorico giornaliero
   const [macros, setMacros] = useState({ carbs: 0, proteins: 0, fats: 0 }); // Macronutrienti consumati
+  const [bmr, setBmr] = useState(0); // Metabolismo basale
+  const [tdee, setTdee] = useState(0); // Fabbisogno energetico totale giornaliero
   const { userId, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -30,8 +32,15 @@ const Home: React.FC = () => {
       if (userId) {
         const response = await APIDbHandler.InfoUser(userId);
         // Imposta dati base utente
-        setWeight(response?.userInfo?.weight);
+        const userWeight = response?.userInfo?.weight || 0;
+        setWeight(userWeight);
         setTotalCalories(response?.userInfo?.dailyCalorieGoal);
+
+        // Calcola BMR e TDEE
+        const calculatedBMR = calculateBMR(userWeight);
+        const calculatedTDEE = calculateTDEE(calculatedBMR);
+        setBmr(calculatedBMR);
+        setTdee(calculatedTDEE);
 
         // Calcola valori nutrizionali dai cibi consumati
         if (response?.data?.food && Array.isArray(response.data.food)) {
@@ -106,6 +115,22 @@ const Home: React.FC = () => {
     };
 
     return percentages;
+  };
+
+  // Calcola BMR usando la formula Mifflin-St Jeor
+  const calculateBMR = (weight: number, height: number = 175, age: number = 25, gender: string = 'M') => {
+    if (weight === 0) return 0;
+
+    if (gender === 'M') {
+      return Math.round(10 * weight + 6.25 * height - 5 * age + 5);
+    } else {
+      return Math.round(10 * weight + 6.25 * height - 5 * age - 161);
+    }
+  };
+
+  // Calcola TDEE basato su BMR e livello di attività
+  const calculateTDEE = (bmr: number, activityLevel: number = 1.4) => {
+    return Math.round(bmr * activityLevel);
   };
 
   useEffect(() => {
@@ -279,11 +304,11 @@ const Home: React.FC = () => {
           <div className="flex flex-col gap-1">
             <div className="flex justify-between text-sm text-gray-300">
               <span>TDEE (Fabbisogno totale)</span>
-              <span className="font-bold text-white">2456 kcal</span>
+              <span className="font-bold text-white">{tdee > 0 ? `${tdee} kcal` : 'Calcolo in corso...'}</span>
             </div>
             <div className="flex justify-between text-sm text-gray-300">
               <span>BMR (Metabolismo basale)</span>
-              <span className="font-bold text-white">1786 kcal</span>
+              <span className="font-bold text-white">{bmr > 0 ? `${bmr} kcal` : 'Calcolo in corso...'}</span>
             </div>
           </div>
           <div className="text-xs text-gray-500 mt-2">
