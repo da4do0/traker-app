@@ -1,11 +1,5 @@
 import { useState, useEffect } from 'react';
 import { APIDbHandler } from "../api/APIHandler";
-import { useUser } from './UserInfo';
-
-interface User {
-  email: string;
-  name: string;
-}
 
 export const useAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);

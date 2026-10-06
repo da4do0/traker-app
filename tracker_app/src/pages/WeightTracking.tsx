@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
-import { Plus, BarChart3 } from "lucide-react";
-import Header from "../components/Header";
-import ButtonContainer from "../components/ButtonContainer";
+import { Plus } from "lucide-react";
+import Shell, { PageHead } from "../components/Shell";
+import { Btn, ErrorBanner, fmt, useIsDesktop } from "../components/ui";
 import WeightProgressCard from "../components/WeightProgressCard";
 import BodyMetricsGrid from "../components/BodyMetricsGrid";
 import WeightChart from "../components/WeightChart";
 import AddMeasurementModal from "../components/AddMeasurementModal";
-import ErrorDisplay from "../components/ErrorDisplay";
 import type {
   Measurement,
   MeasurementInput,
@@ -21,6 +20,7 @@ import {
   calculateWeightProgress,
   calculateBodyMetrics,
   calculateWeightTrend,
+  calculateProgressStats,
 } from "../utils/weightCalculations";
 import { useUser } from "../hooks/UserInfo";
 import { APIDbHandler } from "../api/APIHandler";
@@ -124,11 +124,11 @@ export default function WeightTracking() {
   const getGoalText = () => {
     switch (user.weightGoal) {
       case 1:
-        return "Perdita di peso";
+        return "Perdere peso";
       case 2:
-        return "Mantenimento peso";
+        return "Mantenere peso";
       case 3:
-        return "Aumento di peso";
+        return "Aumentare peso";
       default:
         return "Obiettivo non impostato";
     }
@@ -165,141 +165,82 @@ export default function WeightTracking() {
     }
   }, [userId]);
 
+  // ---------- UI
+  const desktop = useIsDesktop();
+  const single = measurements.length === 1;
+  const trackingDays = calculateProgressStats(measurements).trackingDays;
+  const summary: [string, string, string][] = [
+    ["MISURAZIONI", "MISURAZIONI", fmt(measurements.length)],
+    ["GIORNI", "GIORNI TRACCIATI", fmt(trackingDays)],
+    ["TREND 30G", "TREND 30 GIORNI", single ? "—" : `${weightTrend.change < 0 ? "−" : weightTrend.change > 0 ? "+" : ""}${fmt(Math.abs(weightTrend.change), 1)} KG`],
+  ];
+  const add = desktop ? (
+    <Btn icon={<Plus size={20} strokeWidth={2} />} onClick={() => setIsAddModalOpen(true)} className="!h-12 w-[236px]">Nuova misurazione</Btn>
+  ) : (
+    <Btn size="M" icon={<Plus size={20} strokeWidth={2} />} onClick={() => setIsAddModalOpen(true)} className="!h-9 w-[118px]">Misura</Btn>
+  );
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-950 text-white">
-      <Header />
+    <Shell active="peso">
+      <PageHead title="peso" date={false} right={add}>
+        <span className="t-label hidden pb-[10px] lg:block">{getGoalText().toUpperCase()}</span>
+      </PageHead>
 
-      <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* Page Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-              <BarChart3 className="w-7 h-7 text-emerald-400" />
-              Monitoraggio Peso
-            </h1>
-            <p className="text-gray-400 text-sm mt-1">{getGoalText()}</p>
-          </div>
-          <ButtonContainer
-            color="emerald"
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex flex-row items-center gap-2 px-4 py-2"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Aggiungi Peso</span>
-          </ButtonContainer>
+      {/* Error Display */}
+      {error && <div className="mb-3"><ErrorBanner onDismiss={() => setError(null)}>{error}</ErrorBanner></div>}
+
+      {isLoading ? (
+        <div className="flex flex-col items-center py-16 text-center">
+          <span className="size-8 animate-spin rounded-full border-2 border-ink border-t-transparent" />
+          <p className="t-title mt-6">Caricamento dati...</p>
+          <p className="t-body mt-2 text-ink2">Stiamo recuperando le tue misurazioni</p>
         </div>
+      ) : measurements.length === 0 ? (
+        <section className="flex flex-col items-center rounded-[28px] bg-tile px-5 py-12 text-center lg:rounded-[32px]">
+          <h3 className="t-title">Inizia a tracciare il tuo peso</h3>
+          <p className="t-body mt-2 max-w-md text-ink2">Registra le tue misurazioni per vedere i progressi verso il tuo obiettivo</p>
+          <Btn icon={<Plus size={20} strokeWidth={2} />} onClick={() => setIsAddModalOpen(true)} className="mt-6">Prima misurazione</Btn>
+        </section>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-12 lg:gap-6">
+          {/* Progress Overview */}
+          <WeightProgressCard
+            className="col-span-2 lg:col-span-5"
+            progress={progress}
+            weightGoal={user.weightGoal}
+            trend={weightTrend}
+            startDate={chartData[0]?.date}
+            single={single}
+          />
 
-        {/* Error Display */}
-        {error && (
-          <ErrorDisplay error={error} onDismiss={() => setError(null)} />
-        )}
+          {/* Weight Chart (su mobile dopo BMI/FFMI) */}
+          <WeightChart className="order-1 col-span-2 lg:order-none lg:col-span-7" data={chartData} />
 
-        {/* Loading State */}
-        {isLoading ? (
-          <div className="text-center py-16">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-400 mx-auto mb-4"></div>
-            <h3 className="text-xl font-semibold text-white mb-2">
-              Caricamento dati...
-            </h3>
-            <p className="text-gray-400">
-              Stiamo recuperando le tue misurazioni
-            </p>
-          </div>
-        ) : measurements.length === 0 ? (
-          <div className="text-center py-16">
-            <BarChart3 className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">
-              Inizia a tracciare il tuo peso
-            </h3>
-            <p className="text-gray-400 mb-6 max-w-md mx-auto">
-              Registra le tue misurazioni per vedere i progressi verso il tuo
-              obiettivo
-            </p>
-            <ButtonContainer
-              color="emerald"
-              onClick={() => setIsAddModalOpen(true)}
-              className="inline-flex items-center gap-2 px-6 py-3"
-            >
-              <Plus className="w-5 h-5" />
-              Prima Misurazione
-            </ButtonContainer>
-          </div>
-        ) : (
-          <>
-            {/* Progress Overview */}
-            <WeightProgressCard
-              progress={progress}
-              weightGoal={user.weightGoal}
-            />
+          {/* Body Metrics */}
+          <BodyMetricsGrid metrics={bodyMetrics} weightTrend={weightTrend} />
 
-            {/* Body Metrics */}
-            <div>
-              <h2 className="text-lg font-semibold text-white mb-3">
-                Metriche Corporee
-              </h2>
-              <BodyMetricsGrid
-                metrics={bodyMetrics}
-                weightTrend={weightTrend}
-              />
-            </div>
-
-            {/* Weight Chart */}
-            <div>
-              <h2 className="text-lg font-semibold text-white mb-3">
-                Cronologia
-              </h2>
-              <WeightChart data={chartData} />
-            </div>
-
-            {/* Recent Measurements Summary */}
-            <div className="bg-gray-800/30 rounded-xl p-4">
-              <h3 className="text-md font-semibold text-white mb-3">
-                Riepilogo
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                <div>
-                  <p className="text-xs text-gray-400">Misurazioni</p>
-                  <p className="text-lg font-bold text-emerald-400">
-                    {measurements.length}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">Trend Mensile</p>
-                  <p className="text-lg font-bold text-blue-400">
-                    {weightTrend.change > 0 ? "+" : ""}
-                    {weightTrend.change.toFixed(1)} kg
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">All'obiettivo</p>
-                  <p className="text-lg font-bold text-purple-400">
-                    {user.targetWeight
-                      ? `${Math.abs(
-                          progress.currentWeight - user.targetWeight
-                        ).toFixed(1)} kg`
-                      : "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">Progresso</p>
-                  <p className="text-lg font-bold text-yellow-400">
-                    {progress.progressPercentage.toFixed(0)}%
-                  </p>
-                </div>
+          {/* Riepilogo */}
+          <section className="order-2 col-span-2 grid h-[104px] grid-cols-3 rounded-[28px] bg-tile px-5 pt-[22px] lg:order-none lg:col-span-12 lg:h-[120px] lg:grid-cols-[320px_344px_1fr] lg:items-center lg:rounded-[32px] lg:px-8 lg:pt-0">
+            {summary.map(([short, long, value], i) => (
+              <div key={long} className={`lg:h-16 lg:pt-1 ${i ? "lg:border-l lg:border-line lg:pl-6" : ""}`}>
+                <span className="t-label-s block text-ink2">{desktop ? long : short}</span>
+                <span className="t-data-l mt-2 block">{value}</span>
               </div>
-            </div>
-          </>
-        )}
-      </div>
+            ))}
+          </section>
+        </div>
+      )}
 
-      {/* Add Measurement Modal */}
-      <AddMeasurementModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onSave={handleAddMeasurement}
-        currentWeight={latestMeasurement?.weight || user.weight}
-        currentHeight={latestMeasurement?.height || user.height}
-      />
-    </div>
+      {/* Add Measurement Modal: montato all'apertura, così parte dall'ultima misura */}
+      {isAddModalOpen && (
+        <AddMeasurementModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          onSave={handleAddMeasurement}
+          currentWeight={latestMeasurement?.weight || user.weight}
+          currentHeight={latestMeasurement?.height || user.height}
+        />
+      )}
+    </Shell>
   );
 }

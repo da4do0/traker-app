@@ -5,8 +5,7 @@ import type {
     WeightProgress, 
     BodyMetrics, 
     WeightTrend,
-    ProgressStats,
-    ChartDataPoint 
+    ProgressStats
 } from '../types/Measurement';
 import type { WeightGoal } from '../types/User';
 
@@ -223,47 +222,11 @@ function calculateStreaks(measurements: Measurement[]): number[] {
     return streaks;
 }
 
-export function prepareChartData(
-    measurements: Measurement[], 
-    targetWeight?: number
-): ChartDataPoint[] {
-    const chartData: ChartDataPoint[] = measurements
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-        .map(m => ({
-            date: m.date,
-            weight: m.weight,
-            target: targetWeight
-        }));
-
-    if (targetWeight && chartData.length > 0) {
-        chartData.push({
-            date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            weight: targetWeight,
-            target: targetWeight,
-            isGoal: true
-        });
-    }
-
-    return chartData;
-}
-
-export function formatWeight(weight: number): string {
-    return `${weight.toFixed(1)} kg`;
-}
-
-export function formatBMI(bmi: number): string {
-    return bmi.toFixed(1);
-}
-
-export function formatHeight(height: number): string {
-    return `${height} cm`;
-}
-
 export function getMotivationalMessage(progress: WeightProgress, weightGoal?: WeightGoal): string {
     const { isOnTrack, progressPercentage, weightChange } = progress;
 
     if (!weightGoal) {
-        return "Keep tracking your progress!";
+        return "Continua a registrare i tuoi progressi.";
     }
 
     const isLosing = weightGoal === 1;
@@ -271,28 +234,28 @@ export function getMotivationalMessage(progress: WeightProgress, weightGoal?: We
     const isMaintaining = weightGoal === 2;
 
     if (progressPercentage >= 100) {
-        return "🎉 Goal achieved! Great work!";
+        return "Obiettivo raggiunto: ottimo lavoro.";
     }
 
     if (isOnTrack) {
         if (progressPercentage > 75) {
-            return "🔥 Almost there! Keep pushing!";
+            return "Ci sei quasi: non mollare ora.";
         } else if (progressPercentage > 50) {
-            return "💪 Halfway there! Stay consistent!";
+            return "Sei a metà strada: resta costante.";
         } else if (progressPercentage > 25) {
-            return "📈 Good progress! Keep it up!";
+            return "Buon ritmo: continua così.";
         } else {
-            return "🌟 Great start! Stay committed!";
+            return "Ottimo inizio: mantieni l’impegno.";
         }
     } else {
         if (isLosing && weightChange >= 0) {
-            return "⚠️ Focus on your calorie deficit";
+            return "Concentrati sul deficit calorico.";
         } else if (isGaining && weightChange <= 0) {
-            return "⚠️ Consider increasing your calories";
+            return "Valuta di aumentare le calorie.";
         } else if (isMaintaining && Math.abs(weightChange) > 2) {
-            return "⚠️ Try to stabilize your routine";
+            return "Prova a rendere più stabile la routine.";
         } else {
-            return "💡 Adjust your approach for better results";
+            return "Rivedi l’approccio per risultati migliori.";
         }
     }
 }

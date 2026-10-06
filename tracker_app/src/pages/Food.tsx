@@ -1,27 +1,30 @@
 import React, { useState, useEffect } from "react";
-import Header from "../components/Header";
-import Container from "../components/container";
-import ButtonContainer from "../components/ButtonContainer";
-import { Search, Zap, Clock, ChefHat, Plus, Camera } from "lucide-react";
-import FoodCard from "../components/FoodCard";
+import { useLocation, useNavigate } from "react-router-dom";
+import { ArrowLeft, Plus, ScanBarcode, Search, WifiOff, X } from "lucide-react";
 import { APIDbHandler } from "../api/APIHandler";
 import type {
   FoodDetailProps,
-  FoodDetailHover,
   FoodDetailBarcode,
 } from "../types/Food";
 import FoodDetail from "../components/FoodDetail";
 import FoodForm from "../components/FoodForm";
 import BarcodeFinder from "../components/BarcodeFinder";
 import CustomFoodForm from "../components/CustomFoodForm";
+import { FoodPanel } from "../components/FoodPanel";
+import Shell from "../components/Shell";
+import { Btn, DAYS, Dot, IconBtn, ddmm, useIsDesktop } from "../components/ui";
 
 const Food: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [queryFood, setQueryFood] = useState<FoodDetailProps[]>([]);
-  const [foodForm, setFoodForm] = useState<boolean>(false);
   const [foodDetailHover, setFoodDetailHover] = useState(null);
-  const [cameraActive, setCameraActive] = useState(false);
+  // "Scansiona" dalla Home apre direttamente lo scanner
+  const [cameraActive, setCameraActive] = useState<boolean>(!!useLocation().state?.scan);
   const [showCustomForm, setShowCustomForm] = useState(false);
+  const [netError, setNetError] = useState(false);
+  const [selected, setSelected] = useState(0);
+  const desktop = useIsDesktop();
+  const navigate = useNavigate();
 
   const searchFoodQuery = async (query: string) => {
     try {
@@ -49,8 +52,10 @@ const Food: React.FC = () => {
       }));
 
       setQueryFood(formatted);
+      setNetError(false);
     } catch (error) {
       console.error("Errore durante la ricerca:", error);
+      setNetError(true);
     }
   };
 
@@ -89,9 +94,12 @@ const Food: React.FC = () => {
       } else {
         setQueryFood([]);
       }
+      setNetError(false);
     } catch (error) {
       console.error("Errore durante la ricerca:", error);
       setQueryFood([]);
+      // prodotto non trovato = 404 (nessun risultato); server irraggiungibile o in errore = errore di rete
+      setNetError(error instanceof TypeError || (error as Error)?.message === "Internal server error");
     }
   };
 
@@ -99,12 +107,13 @@ const Food: React.FC = () => {
     setFoodDetailHover(food);
   };
 
+  const search = (q: string) => (/^[^\d]+$/.test(q) ? searchFoodQuery(q) : searchFoodBarcode(q));
+
   useEffect(() => {
     const handleKeyDown = async (event: KeyboardEvent) => {
       if (event.key === "Enter" && searchQuery.trim() !== "") {
         event.preventDefault();
-        if (/^[^\d]+$/.test(searchQuery)) await searchFoodQuery(searchQuery);
-        else await searchFoodBarcode(searchQuery);
+        await search(searchQuery);
       }
     };
 
@@ -115,168 +124,94 @@ const Food: React.FC = () => {
     };
   }, [searchQuery]);
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900 p-2 md:p-6">
-      <Header />
-      <main className="flex items-start  justify-center gap-2">
-        <div className="flex flex-col w-[60%] gap-2">
-          {/* search container */}
-          <Container>
-            <div className="flex items-center justify-between gap-2 ">
-              <div className="flex items-center gap-2">
-                <div className="bg-green-900/50 rounded-lg w-fit p-2">
-                  <Search color="green" />
-                </div>
-                <span className="text-white">Cerca Alimento</span>
+  useEffect(() => setSelected(0), [queryFood]);
+
+  // ---------- UI
+  const d = new Date();
+  const current = queryFood[selected];
+  const createBtn = (cls: string) => (
+    <Btn kind="secondary" icon={<Plus size={20} strokeWidth={1.5} />} onClick={() => setShowCustomForm(true)} className={`!h-12 w-full ${cls}`}>
+      Crea alimento
+    </Btn>
+  );
+
+  const left = (
+    <>
+      <div className="flex gap-2 lg:gap-3">
+        <label className="flex h-[52px] min-w-0 flex-1 cursor-text items-center gap-[10px] rounded-full bg-control pl-[18px] pr-3 lg:h-14 lg:gap-3 lg:pl-5 lg:pr-[22px]">
+          <Search size={20} strokeWidth={1.5} className="shrink-0 text-ink2" />
+          <input
+            className="t-body min-w-0 flex-1 bg-transparent text-ink caret-ink outline-none"
+            type="text"
+            enterKeyHint="search"
+            placeholder="Cerca tra migliaia di alimenti"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery("")} aria-label="Svuota la ricerca" className="cursor-pointer text-ink2 hover:text-ink">
+              <X size={18} strokeWidth={1.5} />
+            </button>
+          )}
+        </label>
+        <IconBtn size={52} className="lg:!h-14" aria-label="Scansiona un codice a barre" onClick={() => setCameraActive(true)}>
+          <ScanBarcode size={22} strokeWidth={1.75} />
+        </IconBtn>
+      </div>
+
+      {netError ? (
+        <>
+          <section className="mt-[38px] rounded-[28px] bg-tile px-5 pb-[22px] pt-6 lg:mt-8 lg:rounded-[32px] lg:px-7 lg:pb-[30px] lg:pt-7">
+            <span className="flex size-12 items-center justify-center rounded-full bg-control"><WifiOff size={22} strokeWidth={1.6} /></span>
+            <h2 className="t-title mt-6">Ricerca non disponibile</h2>
+            <p className="t-body mt-2 text-ink2">Non riesco a contattare il server degli alimenti. Controlla la connessione e riprova tra poco.</p>
+            <p className="t-label-s mt-4 text-ink2 lg:mt-[38px]">ERRORE DI RETE · OPENFOODFACTS</p>
+            <Btn onClick={() => search(searchQuery)} className="mt-[10px] !h-11 w-[150px] lg:mt-[14px] lg:!h-12">Riprova</Btn>
+          </section>
+          <p className="t-body-s mt-7 text-ink2">Puoi comunque creare un alimento personalizzato.</p>
+          {createBtn("mt-[14px] lg:w-[220px]")}
+        </>
+      ) : (
+        <>
+          <p className="t-body-s mt-[10px] text-ink2 lg:mt-3">Scrivi un nome, oppure un codice a barre (solo numeri).</p>
+          {queryFood.length > 0 && (
+            <>
+              <div className="mt-7 flex justify-between lg:mt-[22px]">
+                <span className="t-label">{queryFood.length} {queryFood.length === 1 ? "RISULTATO" : "RISULTATI"}</span>
+                <span className="t-label text-ink2">OPENFOODFACTS</span>
               </div>
-
-              <div className="flex items-center gap-1 bg-gray-600/50 px-2 py-1 w-fit rounded-4xl">
-                <Zap color="white" size={10} />
-                <span className="text-white text-[10px]">Ricerca Rapida</span>
+              <div className="mt-[15px] lg:mt-[11px]">
+                {queryFood.map((food: FoodDetailProps, i) => (
+                  <React.Fragment key={food.code}>
+                    {i > 0 && <div className={`h-px bg-line ${desktop && (i === selected || i - 1 === selected) ? "invisible" : ""}`} />}
+                    <FoodDetail {...food} index={i + 1} total={queryFood.length}
+                      selected={desktop && i === selected} onSelect={desktop ? () => setSelected(i) : undefined} />
+                  </React.Fragment>
+                ))}
               </div>
-            </div>
-            <div className="flex items-center gap-2 border border-gray-700 rounded-lg p-2 bg-gray-800">
-              <Search color="gray" />
-              <input
-                className="text-slate-200 text-[18px] w-full focus:outline-none"
-                type="text"
-                placeholder="Cerca tra migliaia di alimenti"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <Camera
-                color="gray"
-                onClick={() => {
-                  setCameraActive(true);
-                }}
-                className="cursor-pointer"
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              {queryFood.map((food: FoodDetailProps) => (
-                <FoodDetail key={food.code} {...food} />
-              ))}
-            </div>
-          </Container>
-
-          {/* recent food container */}
-          {/* <Container>
-            <div className="flex items-center justify-between gap-2 ">
-              <div className="flex items-center gap-2">
-                <div className="bg-blue-900/50 rounded-lg w-fit p-2">
-                  <Clock color="blue" />
-                </div>
-                <span className="text-white">Alimenti recenti</span>
-              </div>
-
-              <div className="flex items-center gap-1 bg-gray-600/50 px-2 py-1 w-fit rounded-4xl">
-                <span className="text-white text-[10px]">Accesso Rapido</span>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <span className=" text-white">In arrivo</span>
-
-               <FoodCard
-                name="Petto di Pollo"
-                type="Proteine"
-                typeColor="red"
-                kcal={165}
-                protein={31}
-                carbs={0}
-                fat={3.6}
-              />
-              <FoodCard
-                name="Riso Basmati"
-                type="Carboidrati"
-                typeColor="yellow"
-                kcal={130}
-                protein={2.7}
-                carbs={28}
-                fat={0.3}
-              />
-              <FoodCard
-                name="Broccoli"
-                type="Verdure"
-                typeColor="green"
-                kcal={34}
-                protein={2.8}
-                carbs={7}
-                fat={0.4}
-              />
-              <FoodCard
-                name="Olio EVO"
-                type="Grassi"
-                typeColor="purple"
-                kcal={884}
-                protein={0}
-                carbs={0}
-                fat={100}
-              />
-              <FoodCard
-                name="Banana"
-                type="Frutta"
-                typeColor="orange"
-                kcal={89}
-                protein={1.1}
-                carbs={23}
-                fat={0.3}
-              />
-              <FoodCard
-                name="Yogurt Greco"
-                type="Latticini"
-                typeColor="blue"
-                kcal={59}
-                protein={10}
-                carbs={3.6}
-                fat={0.4}
-              /> 
-            </div>
-          </Container> */}
-        </div>
-
-        {/* create food container */}
-        <Container css="max-w-[350px]">
-          <div className="flex items-center gap-2">
-            <div className="bg-orange-900/50 rounded-lg w-fit p-2">
-              <ChefHat color="orange" />
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-white">Crea personalizzato</span>
-              <span className="text-white/70 text-[10px]">Ricerca Rapida</span>
-            </div>
-          </div>
-          <span className="text-white/70 font-light">
-            Non trovi l'alimento che cerchi? Creane uno personalizzato con i
-            valori nutrizionali specifici.
-          </span>
-          <button
-            onClick={() => setShowCustomForm(true)}
-            className="flex items-center justify-center bg-orange-500 hover:bg-orange-600 gap-1 py-2 rounded-lg transition-colors cursor-pointer"
-          >
-            <Plus color="white" />
-            <span className="text-white font-medium">Crea Nuovo Alimento</span>
-          </button>
-          <ButtonContainer color="gray" link="">
-            <span className="text-white">Suggerimento</span>
-            <span className="text-white/70 text-[10px]">
-              Puoi trovare i valori nutrizionali sull'etichetta del prodotto o
-              su siti come USDA Food Database.
-            </span>
-          </ButtonContainer>
-        </Container>
-      </main>
-      {foodDetailHover && (
-        <div className="absolute left-0 top-0 w-full h-full flex items-center justify-center z-50 backdrop-blur-xs">
-          <FoodForm food={foodDetailHover} back={handleFoodHover} />
-        </div>
+            </>
+          )}
+          <section className={`${queryFood.length ? "mt-[14px] lg:mt-8" : "mt-7 lg:mt-8"} rounded-[28px] bg-tile px-5 pb-[22px] pt-[22px] lg:rounded-[32px] lg:px-7 lg:pb-8 lg:pt-[26px]`}>
+            <h2 className="t-title">Non lo trovi?</h2>
+            <p className="t-body-s mt-[6px] text-ink2">Crea un alimento con i valori dell’etichetta: calorie e macro per 100 g.</p>
+            {createBtn("mt-[10px] lg:w-[200px]")}
+          </section>
+        </>
       )}
+    </>
+  );
+
+  const overlays = (
+    <>
+      {foodDetailHover && <FoodForm food={foodDetailHover} back={handleFoodHover} />}
 
       {cameraActive && (
         <BarcodeFinder
           onClose={() => setCameraActive(false)}
-          onCodeFound={(code) => {
+          onCodeFound={async (code) => {
+            // lo scanner resta aperto («Cerco il prodotto…») finché la ricerca non risponde
+            await searchFoodBarcode(code);
             setSearchQuery(code);
-            searchFoodBarcode(code);
             setCameraActive(false);
           }}
         />
@@ -290,6 +225,45 @@ const Food: React.FC = () => {
           }}
         />
       )}
+    </>
+  );
+
+  if (desktop) {
+    return (
+      <Shell>
+        <header className="mb-[30px] flex items-start justify-between">
+          <Dot text="cerca" p={8} />
+          <span className="t-label mt-7 text-ink2">AGGIUNGI A OGGI · {DAYS[d.getDay()]} {ddmm(d)}</span>
+        </header>
+        <div className="grid grid-cols-12 gap-6">
+          <div className="col-span-5">{left}</div>
+          <div className="sticky top-8 col-span-7 self-start">
+            {current && !netError ? (
+              <FoodPanel food={current} onAdd={() => handleFoodHover(current)} />
+            ) : (
+              <div className="relative flex h-[848px] items-center justify-center">
+                <svg className="absolute inset-0 size-full" aria-hidden>
+                  <rect x=".5" y=".5" rx="31.5" style={{ width: "calc(100% - 1px)", height: "calc(100% - 1px)" }} fill="none" className="stroke-line" strokeDasharray="6 6" />
+                </svg>
+                <p className="t-body text-ink2">Il dettaglio del prodotto comparirà qui</p>
+              </div>
+            )}
+          </div>
+        </div>
+        {overlays}
+      </Shell>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-void px-5 pb-12 pt-[15px] text-ink">
+      <div className="flex items-center justify-between">
+        <button onClick={() => navigate(-1)} aria-label="Indietro" className="cursor-pointer"><ArrowLeft size={22} strokeWidth={1.5} /></button>
+        <span className="t-label text-ink2">AGGIUNGI A OGGI</span>
+      </div>
+      <div className="mb-[18px] mt-6"><Dot text="cerca" p={5} /></div>
+      {left}
+      {overlays}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import { X, Camera } from "lucide-react";
-import Container from "./container";
+import { X, Zap } from "lucide-react";
+import { Btn, CloseBtn, Dot, Modal, useIsDesktop } from "./ui";
 import { BrowserMultiFormatReader, NotFoundException } from "@zxing/library";
 
 interface BarcodeFindProps {
@@ -17,6 +17,8 @@ const BarcodeFinder: React.FC<BarcodeFindProps> = ({
   const [error, setError] = useState<string>("");
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [torch, setTorch] = useState(false);
+  const desktop = useIsDesktop();
 
   useEffect(() => {
     const codeReader = new BrowserMultiFormatReader();
@@ -64,7 +66,6 @@ const BarcodeFinder: React.FC<BarcodeFindProps> = ({
         
         // Scansione continua usando canvas
         const scanFromVideo = async () => {
-          let animationId: number;
           if (!videoRef.current || !canvasRef.current) return;
           
           const canvas = canvasRef.current;
@@ -72,7 +73,7 @@ const BarcodeFinder: React.FC<BarcodeFindProps> = ({
           const video = videoRef.current;
           
           if (!ctx || video.readyState < 2) {
-            animationId = requestAnimationFrame(scanFromVideo);
+            requestAnimationFrame(scanFromVideo);
             return;
           }
           
@@ -110,7 +111,7 @@ const BarcodeFinder: React.FC<BarcodeFindProps> = ({
           }
           
           // Continua la scansione
-          animationId = requestAnimationFrame(scanFromVideo);
+          requestAnimationFrame(scanFromVideo);
         };
         
         // Avvia la scansione
@@ -152,63 +153,91 @@ const BarcodeFinder: React.FC<BarcodeFindProps> = ({
     };
   }, [onCodeFound]);
 
+  // Torcia: solo dove il browser espone la capability (alcuni Android Chrome)
+  const toggleTorch = async () => {
+    const track = (videoRef.current?.srcObject as MediaStream | null)?.getVideoTracks()[0];
+    if (!track) return;
+    try {
+      await track.applyConstraints({ advanced: [{ torch: !torch } as any] });
+      setTorch(!torch);
+    } catch {
+      console.warn("Torcia non supportata su questo dispositivo");
+    }
+  };
+
+  // Mirino: angoli bianchi, linea rossa, fuori dal mirino oscurato
+  const corners = (
+    <>
+      {[
+        "left-0 top-0 h-1 w-9", "left-0 top-0 h-9 w-1", "right-0 top-0 h-1 w-9", "right-0 top-0 h-9 w-1",
+        "bottom-0 left-0 h-1 w-9", "bottom-0 left-0 h-9 w-1", "bottom-0 right-0 h-1 w-9", "bottom-0 right-0 h-9 w-1",
+      ].map((c) => <span key={c} className={`absolute rounded-sm bg-ink ${c}`} />)}
+      <span className="absolute inset-x-4 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-signal" />
+    </>
+  );
+
+  const video = (
+    <>
+      <video ref={videoRef} className="absolute inset-0 h-full w-full object-cover" autoPlay playsInline muted />
+      <canvas ref={canvasRef} className="hidden" />
+    </>
+  );
+
+  const status = !isScanning && (
+    <p className="t-body-s absolute inset-x-6 top-1/2 -translate-y-1/2 text-center text-ink2">{error || "Inizializzazione scanner..."}</p>
+  );
+
+  const result = scannedCode && (
+    <div>
+      <div className="flex items-center gap-2">
+        <span className="size-2 rounded-full bg-signal" />
+        <span className="t-label">CODICE LETTO</span>
+      </div>
+      <p className="t-data-l mt-[13px]">{scannedCode}</p>
+      <div className="mt-6 flex items-center gap-4">
+        <span className="flex gap-[6px]">
+          {[1, 1, 1, 0, 0].map((on, i) => <span key={i} className={`size-[6px] rounded-full ${on ? "bg-ink" : "bg-dotoff"}`} />)}
+        </span>
+        <span className="t-body-s text-ink2">Cerco il prodotto su OpenFoodFacts…</span>
+      </div>
+    </div>
+  );
+
+  if (desktop) {
+    return (
+      <Modal onClose={onClose}>
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="t-title">Scansiona</h2>
+            <p className="t-body-s mt-1 text-ink2">Inquadra il codice a barre con la webcam.</p>
+          </div>
+          <CloseBtn onClick={onClose} />
+        </div>
+        <div className="relative mt-6 h-[380px] overflow-hidden rounded-3xl bg-void">
+          {video}
+          <div className="absolute inset-x-[88px] inset-y-[60px]">{corners}</div>
+          {status}
+        </div>
+        <div className="mt-8 min-h-[90px]">{result}</div>
+        <div className="mt-4 flex justify-end">
+          <Btn kind="secondary" className="!h-12 w-[160px]" onClick={onClose}>Annulla</Btn>
+        </div>
+      </Modal>
+    );
+  }
+
   return (
-    <div className="absolute left-0 top-0 w-full h-full flex items-center justify-center z-50 backdrop-blur-xs">
-      <Container css="w-full max-w-md">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className="bg-blue-900/50 rounded-lg p-2">
-              <Camera color="blue" size={18} />
-            </div>
-            <span className="text-white font-medium">Barcode Scanner</span>
-          </div>
-          <button
-            className="text-gray-400 hover:text-white p-1"
-            onClick={onClose}
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Scanner Container */}
-        <div className="relative bg-gray-800 rounded-lg overflow-hidden">
-          <video
-            ref={videoRef}
-            className="w-full h-64 object-cover"
-            autoPlay
-            playsInline
-            muted
-          />
-          <canvas
-            ref={canvasRef}
-            className="hidden"
-          />
-          {!isScanning && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-              <div className="text-white text-center">
-                <Camera size={48} className="mx-auto mb-2 opacity-50" />
-                <p className="text-sm opacity-75">
-                  {error || "Inizializzazione scanner..."}
-                </p>
-              </div>
-            </div>
-          )}
-          {error && (
-            <div className="absolute bottom-2 left-2 right-2 p-2 bg-red-900/80 rounded text-white text-xs text-center">
-              {error}
-            </div>
-          )}
-        </div>
-
-        {/* Risultato scansione */}
-        {scannedCode && (
-          <div className="mt-4 p-3 bg-green-900/50 rounded-lg border border-green-600">
-            <p className="text-green-300 text-sm mb-1">Codice scansionato:</p>
-            <code className="text-white font-mono text-lg">{scannedCode}</code>
-          </div>
-        )}
-      </Container>
+    <div className="fixed inset-0 z-50 overflow-hidden bg-tile">
+      {video}
+      <div className="absolute left-1/2 top-[203px] h-[250px] w-[300px] -translate-x-1/2 shadow-[0_0_0_9999px_rgba(0,0,0,0.55)]">{corners}</div>
+      {status}
+      <button onClick={onClose} aria-label="Chiudi" className="absolute left-5 top-[13px] flex size-11 cursor-pointer items-center justify-center rounded-full bg-void/60"><X size={20} strokeWidth={1.75} /></button>
+      <button onClick={toggleTorch} aria-label="Torcia" aria-pressed={torch} className={`absolute right-5 top-[13px] flex size-11 cursor-pointer items-center justify-center rounded-full ${torch ? "bg-ink text-void" : "bg-void/60"}`}><Zap size={20} strokeWidth={1.75} /></button>
+      <div className="absolute inset-x-0 top-[103px] flex flex-col items-center">
+        <Dot text="scansiona" p={4.2} />
+        <p className="t-body mt-[17px] text-ink2">Inquadra il codice a barre della confezione.</p>
+      </div>
+      {result && <div className="absolute inset-x-4 top-[593px] rounded-[28px] bg-void px-6 pb-7 pt-6">{result}</div>}
     </div>
   );
 };

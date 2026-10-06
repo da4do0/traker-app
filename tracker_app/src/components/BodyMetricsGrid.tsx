@@ -1,50 +1,35 @@
-import React from 'react';
-import { Scale, Ruler, Activity, Zap } from 'lucide-react';
-import Container from './container';
-import type { BodyMetrics, WeightTrend } from '../types/Measurement';
-import { formatWeight, formatBMI, formatHeight } from '../utils/weightCalculations';
+import type { BMICategory, BodyMetrics, FFMICategory, WeightTrend } from '../types/Measurement';
+import { RDot, fmt } from './ui';
 
-interface MetricCardProps {
-    icon: React.ReactNode;
-    title: string;
-    value: string;
-    subtitle: string;
-    color: string;
-    trend?: WeightTrend;
-}
+export const BMI_IT: Record<BMICategory, string> = {
+    "Underweight": "Sottopeso",
+    "Normal": "Normale",
+    "Overweight": "Sovrappeso",
+    "Obese Class I": "Obesità I",
+    "Obese Class II": "Obesità II",
+    "Obese Class III": "Obesità III",
+};
 
-function MetricCard({ icon, title, value, subtitle, color, trend }: MetricCardProps) {
-    const getTrendIndicator = () => {
-        if (!trend) return null;
-        
-        const trendIcon = trend.trend === 'increasing' ? '↗' : 
-                         trend.trend === 'decreasing' ? '↘' : '→';
-        const trendColor = trend.trend === 'stable' ? 'text-gray-400' : 
-                          trend.velocity > 0 ? 'text-emerald-400' : 'text-blue-400';
-        
-        return (
-            <div className={`text-xs ${trendColor} flex items-center gap-1`}>
-                <span>{trendIcon}</span>
-                <span>{Math.abs(trend.velocity).toFixed(1)} kg/sett</span>
-            </div>
-        );
-    };
+const FFMI_IT: Record<FFMICategory, string> = {
+    "Below Average": "Sotto la media",
+    "Average": "Nella media",
+    "Above Average": "Sopra la media",
+    "Excellent": "Eccellente",
+    "Superior": "Superiore",
+};
 
+/** Scala BMI 15–40 divisa a 18,5 · 25 · 30: si accende la fascia, una tacca rossa segna il valore. */
+export function BmiScale({ bmi, category, className = "" }: { bmi: number; category: BMICategory; className?: string }) {
+    const band = ["Underweight", "Normal", "Overweight"].indexOf(category);
+    const active = band < 0 ? 3 : band;
+    const at = Math.min(1, Math.max(0, (bmi - 15) / 25));
     return (
-        <Container css="p-4 hover:bg-gray-800/50 transition-colors">
-            <div className="flex items-start justify-between mb-3">
-                <div className={`p-2 rounded-lg ${color}`}>
-                    {icon}
-                </div>
-                {getTrendIndicator()}
-            </div>
-            
-            <div className="space-y-1">
-                <p className="text-xs text-gray-400 font-medium">{title}</p>
-                <p className="text-2xl font-bold text-white">{value}</p>
-                <p className="text-xs text-gray-300">{subtitle}</p>
-            </div>
-        </Container>
+        <div className={`relative flex gap-[3px] ${className}`}>
+            {[3.5, 6.5, 5, 10].map((w, i) => (
+                <span key={i} className={`h-[6px] rounded-full ${i === active ? "bg-ink" : "bg-dotoff"}`} style={{ flexGrow: w, flexBasis: 0 }} />
+            ))}
+            <span className="absolute -top-[6px] h-[18px] w-[2px] -translate-x-1/2 rounded-[1px] bg-signal" style={{ left: `${at * 100}%` }} />
+        </div>
     );
 }
 
@@ -54,67 +39,40 @@ interface BodyMetricsGridProps {
     className?: string;
 }
 
-export default function BodyMetricsGrid({ metrics, weightTrend, className = "" }: BodyMetricsGridProps) {
-    const { weight, height, bmi, bmiCategory, ffmi, ffmiCategory } = metrics;
-
-
-    const getBMICategoryTranslation = () => {
-        switch (bmiCategory) {
-            case "Underweight": return "Sottopeso";
-            case "Normal": return "Normale";
-            case "Overweight": return "Sovrappeso";
-            case "Obese Class I": return "Obesità I";
-            case "Obese Class II": return "Obesità II";
-            case "Obese Class III": return "Obesità III";
-            default: return "";
-        }
-    };
-
-    const getFFMICategoryTranslation = () => {
-        switch (ffmiCategory) {
-            case "Below Average": return "Sotto la media";
-            case "Average": return "Nella media";
-            case "Above Average": return "Sopra la media";
-            case "Excellent": return "Eccellente";
-            case "Superior": return "Superiore";
-            default: return "";
-        }
-    };
+/** Tile BMI e FFMI (in griglia: il genitore decide le colonne). */
+export default function BodyMetricsGrid({ metrics }: BodyMetricsGridProps) {
+    const { height, bmi, bmiCategory, ffmi, ffmiCategory } = metrics;
+    const tile = "rounded-[28px] bg-tile p-5 h-[176px] lg:h-[200px] lg:rounded-[32px] lg:p-7 lg:pt-[26px] lg:col-span-6";
+    const head = (label: string, value: number, category: string) => (
+        <>
+            <span className="t-label text-ink2">{label}</span>
+            <div className="mt-[18px] flex items-end lg:mt-5">
+                <span className="flex lg:w-48"><RDot text={fmt(value, 1)} p={[5, 7]} /></span>
+                <span className="t-label hidden pb-1 lg:block">{category.toUpperCase()}</span>
+            </div>
+        </>
+    );
 
     return (
-        <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${className}`}>
-            <MetricCard
-                icon={<Scale className="w-5 h-5 text-white" />}
-                title="Peso Attuale"
-                value={formatWeight(weight)}
-                subtitle="Ultima misurazione"
-                color="bg-emerald-500/20"
-                trend={weightTrend}
-            />
-            
-            <MetricCard
-                icon={<Ruler className="w-5 h-5 text-white" />}
-                title="Altezza"
-                value={formatHeight(height)}
-                subtitle="Misurazione statica"
-                color="bg-blue-500/20"
-            />
-            
-            <MetricCard
-                icon={<Activity className="w-5 h-5 text-white" />}
-                title="Indice BMI"
-                value={formatBMI(bmi)}
-                subtitle={getBMICategoryTranslation()}
-                color="bg-purple-500/20"
-            />
-            
-            <MetricCard
-                icon={<Zap className="w-5 h-5 text-white" />}
-                title="FFMI"
-                value={ffmi.toFixed(1)}
-                subtitle={getFFMICategoryTranslation()}
-                color="bg-yellow-500/20"
-            />
-        </div>
+        <>
+            <section className={tile}>
+                {head("BMI", bmi, BMI_IT[bmiCategory])}
+                <BmiScale bmi={bmi} category={bmiCategory} className="mt-[14px] lg:mt-[22px]" />
+                <span className="t-label-s mt-3 block lg:hidden">{BMI_IT[bmiCategory]}</span>
+                <div className="mt-[10px] flex items-center border-t border-line pt-[9px] lg:mt-[26px] lg:border-0 lg:pt-0">
+                    <span className="t-label-s text-ink2 lg:w-[72px]">ALTEZZA</span>
+                    <span className="t-data ml-auto lg:ml-0">{fmt(height)} CM</span>
+                    <span className="t-label-s ml-auto hidden text-ink2 lg:block">18,5 · 25 · 30</span>
+                </div>
+            </section>
+            <section className={tile}>
+                {head("FFMI", ffmi, FFMI_IT[ffmiCategory])}
+                <span className="t-label-s mt-8 block lg:hidden">{FFMI_IT[ffmiCategory]}</span>
+                <div className="mt-[10px] border-t border-line pt-[9px] lg:hidden">
+                    <span className="t-label-s text-ink2">STIMA CON 15% MG</span>
+                </div>
+                <p className="t-body-s mt-7 hidden text-ink2 lg:block">Indice di massa magra, stimato con il 15% di massa grassa.</p>
+            </section>
+        </>
     );
 }

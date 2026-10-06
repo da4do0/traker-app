@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { X, Save, Scale, Ruler, Calendar } from 'lucide-react';
-import Container from './container';
-import ButtonContainer from './ButtonContainer';
+import { Calendar } from 'lucide-react';
 import type { MeasurementInput } from '../types/Measurement';
+import { getBMICategory } from '../utils/weightCalculations';
+import { BMI_IT, BmiScale } from './BodyMetricsGrid';
+import { Btn, CloseBtn, Dot, Field, Modal, fmt } from './ui';
 
 interface AddMeasurementModalProps {
     isOpen: boolean;
@@ -60,115 +61,46 @@ export default function AddMeasurementModal({
 
     if (!isOpen) return null;
 
+    const bmi = weight / Math.pow(height / 100, 2);
+    const category = getBMICategory(bmi);
+    const diff = weight - currentWeight;
+
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <Container css="w-full max-w-md p-6 relative">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-bold text-white">Nuova Misurazione</h2>
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-                    >
-                        <X className="w-5 h-5 text-gray-400" />
-                    </button>
+        <Modal onClose={isLoading ? () => {} : onClose} width={520}>
+            {/* Header */}
+            <div className="-mt-2 flex items-start justify-between lg:mt-0">
+                <h2 className="t-title mt-1">Nuova misurazione</h2>
+                <CloseBtn onClick={onClose} disabled={isLoading} />
+            </div>
+
+            {/* Form */}
+            <div className="mt-3 flex flex-col gap-[22px]">
+                <Field label="DATA" type="date" icon={<Calendar size={20} strokeWidth={1.5} />} value={date}
+                    onChange={(e) => setDate(e.target.value)} max={new Date().toISOString().split('T')[0]} />
+                <div className="grid grid-cols-2 gap-4">
+                    <Field label="PESO" unit="KG" type="number" inputMode="decimal" value={weight} onChange={handleWeightChange} step="0.1" min="1" max="300" placeholder="70.0" />
+                    <Field label="ALTEZZA" unit="CM" type="number" inputMode="numeric" value={height} onChange={handleHeightChange} step="1" min="100" max="250" placeholder="170" />
                 </div>
+            </div>
 
-                {/* Form */}
-                <div className="space-y-6">
-                    {/* Date Input */}
-                    <div>
-                        <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
-                            <Calendar className="w-4 h-4" />
-                            Data
-                        </label>
-                        <input
-                            type="date"
-                            value={date}
-                            onChange={(e) => setDate(e.target.value)}
-                            className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-emerald-500 transition-colors"
-                            max={new Date().toISOString().split('T')[0]}
-                        />
-                    </div>
-
-                    {/* Weight Input */}
-                    <div>
-                        <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
-                            <Scale className="w-4 h-4" />
-                            Peso (kg)
-                        </label>
-                        <div className="relative">
-                            <input
-                                type="number"
-                                value={weight}
-                                onChange={handleWeightChange}
-                                step="0.1"
-                                min="1"
-                                max="300"
-                                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-emerald-500 transition-colors"
-                                placeholder="70.0"
-                            />
-                            <span className="absolute right-3 top-2 text-sm text-gray-400">kg</span>
-                        </div>
-                    </div>
-
-                    {/* Height Input */}
-                    <div>
-                        <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
-                            <Ruler className="w-4 h-4" />
-                            Altezza (cm)
-                        </label>
-                        <div className="relative">
-                            <input
-                                type="number"
-                                value={height}
-                                onChange={handleHeightChange}
-                                step="1"
-                                min="100"
-                                max="250"
-                                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:border-emerald-500 transition-colors"
-                                placeholder="170"
-                            />
-                            <span className="absolute right-3 top-2 text-sm text-gray-400">cm</span>
-                        </div>
-                    </div>
-
-                    {/* BMI Preview */}
-                    <div className="bg-gray-800/30 rounded-lg p-3">
-                        <p className="text-sm text-gray-400 mb-1">BMI Calcolato</p>
-                        <p className="text-lg font-semibold text-emerald-400">
-                            {((weight / Math.pow(height / 100, 2))).toFixed(1)}
-                        </p>
-                    </div>
+            {/* BMI Preview */}
+            <div className="mt-7 rounded-[20px] bg-control px-5 pb-6 pt-[18px]">
+                <div className="flex justify-between">
+                    <span className="t-label text-ink2">BMI CALCOLATO</span>
+                    <span className="t-label">{BMI_IT[category]}</span>
                 </div>
+                <div className="mt-3 flex"><Dot text={fmt(bmi, 1)} p={5} /></div>
+                <BmiScale bmi={bmi} category={category} className="mt-5" />
+            </div>
+            <p className="t-body-s mt-4 text-ink2">Rispetto all’ultima: {diff < 0 ? "−" : diff > 0 ? "+" : ""}{fmt(Math.abs(diff), 1)} kg</p>
 
-                {/* Actions */}
-                <div className="flex gap-3 mt-8">
-                    <ButtonContainer
-                        color="gray"
-                        onClick={onClose}
-                        className="flex-1 py-3"
-                        disabled={isLoading}
-                    >
-                        Annulla
-                    </ButtonContainer>
-                    <ButtonContainer
-                        color="emerald"
-                        onClick={handleSave}
-                        className="flex-1 py-3 flex items-center justify-center gap-2"
-                        disabled={isLoading || weight <= 0 || height <= 0}
-                    >
-                        {isLoading ? (
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        ) : (
-                            <>
-                                <Save className="w-4 h-4" />
-                                Salva
-                            </>
-                        )}
-                    </ButtonContainer>
-                </div>
-            </Container>
-        </div>
+            {/* Actions */}
+            <div className="mb-6 mt-16 flex gap-4 lg:-mb-2 lg:mt-9 lg:justify-end">
+                <Btn kind="secondary" onClick={onClose} disabled={isLoading} className="flex-1 lg:w-[160px] lg:flex-none">Annulla</Btn>
+                <Btn onClick={handleSave} disabled={isLoading || weight <= 0 || height <= 0} className="flex-1 lg:w-[160px] lg:flex-none">
+                    {isLoading ? <span className="size-4 animate-spin rounded-full border-2 border-void border-t-transparent" /> : "Salva"}
+                </Btn>
+            </div>
+        </Modal>
     );
 }

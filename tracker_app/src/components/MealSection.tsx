@@ -1,7 +1,8 @@
 import React from "react";
-import { ChevronDown, ChevronUp, Edit, Trash2, Utensils } from "lucide-react";
-import Container from "./container";
-import type { MealSectionProps } from "../types/FoodList";
+import { useNavigate } from "react-router-dom";
+import { ChevronDown, ChevronUp, Pencil, Plus, Trash } from "lucide-react";
+import type { FoodEntry, MealSectionProps } from "../types/FoodList";
+import { Btn, IconBtn, fmt, useIsDesktop } from "./ui";
 
 const MealSection: React.FC<MealSectionProps> = ({
   section,
@@ -10,6 +11,9 @@ const MealSection: React.FC<MealSectionProps> = ({
   onDeleteFood,
   searchQuery,
 }) => {
+  const navigate = useNavigate();
+  const desktop = useIsDesktop();
+
   // Filter foods based on search query
   const filteredFoods = section.foods.filter(
     (food) =>
@@ -20,124 +24,106 @@ const MealSection: React.FC<MealSectionProps> = ({
 
   const hasFilteredFoods = filteredFoods.length > 0;
 
-  // Simplified color mapping for meal sections
-  const borderColors = {
-    yellow: "border-yellow-500/20",
-    orange: "border-orange-500/20",
-    purple: "border-purple-500/20",
-    green: "border-green-500/20",
-  } as const;
-
-  const borderColor =
-    borderColors[section.color as keyof typeof borderColors] ||
-    borderColors.green;
-
   if (searchQuery && !hasFilteredFoods) {
     return null; // Don't render section if no foods match search
   }
 
-  return (
-    <Container>
-      {/* Section Header */}
-      <div
-        className="flex items-center justify-between cursor-pointer min-h-[48px]"
-        onClick={() => onToggleExpanded(section.id)}
-      >
-        <div className="flex items-center gap-3">
-          <span className="text-xl">{section.emoji}</span>
-          <div>
-            <h3 className="text-white font-medium">{section.name}</h3>
-            <p className="text-gray-400 text-sm">
-              {filteredFoods.length} • {section.totalCalories} kcal
-            </p>
+  const tile = "rounded-[28px] bg-tile px-5 pt-[22px] lg:rounded-[32px] lg:px-8";
+  const add = (cls: string) => (
+    <Btn kind="secondary" size="M" icon={<Plus size={20} strokeWidth={1.5} />} onClick={() => navigate("/food")} className={`!px-0 ${cls}`}>Aggiungi</Btn>
+  );
+
+  // Pasto vuoto: niente toggle, invito ad aggiungere
+  if (section.foods.length === 0) {
+    return (
+      <section className={`${tile} pb-[30px] lg:pb-8`}>
+        {desktop ? (
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-7"><h3 className="t-title">{section.name}</h3><span className="t-label text-ink2">VUOTO</span></div>
+              <p className="t-body-s mt-[14px] text-ink2">Nessun alimento registrato per {section.name.toLowerCase()}.</p>
+            </div>
+            {add("mt-[10px] !h-10 w-[124px]")}
           </div>
-        </div>
-        <div className="p-2">
-          {section.expanded ? (
-            <ChevronUp className="w-5 h-5 text-gray-400" />
-          ) : (
-            <ChevronDown className="w-5 h-5 text-gray-400" />
-          )}
-        </div>
-      </div>
+        ) : (
+          <>
+            <h3 className="t-title">{section.name}</h3>
+            <p className="t-label-s mt-[2px] text-ink2">VUOTO</p>
+            <div className="mt-3 flex items-center justify-between">
+              <p className="t-body-s text-ink2">Nessun alimento.</p>
+              {add("!h-9 w-[100px]")}
+            </div>
+          </>
+        )}
+      </section>
+    );
+  }
+
+  const count = `${filteredFoods.length} ${filteredFoods.length === 1 ? "ALIMENTO" : "ALIMENTI"} · ${fmt(section.totalCalories)} KCAL`;
+  const actions = (food: FoodEntry) => (
+    <div className="flex shrink-0 gap-2">
+      <IconBtn size={32} title="Modifica" aria-label={`Modifica ${food.name}`} onClick={(e) => { e.stopPropagation(); onEditFood(food); }}>
+        <Pencil size={15} strokeWidth={1.6} />
+      </IconBtn>
+      <IconBtn size={32} title="Elimina" aria-label={`Elimina ${food.name}`} onClick={(e) => { e.stopPropagation(); onDeleteFood(food); }}>
+        <Trash size={15} strokeWidth={1.6} />
+      </IconBtn>
+    </div>
+  );
+  const Chevron = section.expanded ? ChevronUp : ChevronDown;
+
+  return (
+    <section className={`${tile} pb-[22px] ${section.expanded ? "lg:pb-3" : ""}`}>
+      {/* Section Header */}
+      <button
+        className="flex w-full cursor-pointer items-start justify-between text-left lg:items-center"
+        onClick={() => onToggleExpanded(section.id)}
+        aria-expanded={section.expanded}
+      >
+        <span className="lg:flex lg:items-center lg:gap-7">
+          <h3 className="t-title">{section.name}</h3>
+          <span className="t-label-s mt-[2px] block text-ink2 lg:t-label lg:mt-0">{count}</span>
+        </span>
+        <Chevron size={18} strokeWidth={1.75} className="mt-[6px] shrink-0 text-ink2 lg:mt-0" />
+      </button>
 
       {/* Foods List */}
-      {section.expanded && (
-        <div className="mt-3 space-y-2">
-          {hasFilteredFoods ? (
-            filteredFoods.map((food) => (
-              <div
-                key={food?.id}
-                className="bg-gray-800/50 rounded-xl p-4 hover:bg-gray-800/70 transition-colors group min-h-[48px] flex items-center"
-              >
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    {/* Food Image */}
-                    {food?.imageUrl && (
-                      <img
-                        src={food.imageUrl}
-                        alt={food.name}
-                        className="w-10 h-10 rounded object-cover flex-shrink-0"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = "none";
-                        }}
-                      />
-                    )}
-
-                    {/* Food Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3">
-                        <h4 className="text-white font-medium truncate">
-                          {food.name}
-                        </h4>
-                        <span className="text-orange-400 font-medium text-sm">
-                          {food.calories} kcal
-                        </span>
-                        <span className="text-gray-400 text-sm">
-                          {food.quantity}g
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Actions - Always visible on mobile */}
-                  <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEditFood(food);
-                      }}
-                      className="p-2 text-gray-400 hover:text-blue-400 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-                      title="Modifica"
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteFood(food);
-                      }}
-                      className="p-2 text-gray-400 hover:text-red-400 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-                      title="Elimina"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="text-center py-6">
-              <Utensils className="w-8 h-8 text-gray-600 mx-auto mb-2" />
-              <p className="text-gray-400 text-sm">
-                {searchQuery ? `Nessun alimento trovato` : `Nessun alimento`}
-              </p>
+      {section.expanded && (desktop ? (
+        <div className="mt-6">
+          <div className="t-label-s flex pb-3 text-ink2">
+            <span className="flex-1">ALIMENTO</span>
+            <span className="w-20 text-right">QUANTITÀ</span>
+            <span className="w-20 text-right">KCAL</span>
+            {["P", "C", "G"].map((k) => <span key={k} className="w-[60px] text-right">{k}</span>)}
+            <span className="w-[101px]" />
+          </div>
+          {filteredFoods.map((food) => (
+            <div key={food.id} className="flex h-[52px] items-center border-t border-line">
+              <span className="t-strong min-w-0 flex-1 truncate">{food.name}</span>
+              <span className="t-data w-20 text-right text-ink2">{fmt(food.quantity)} G</span>
+              <span className="t-data w-20 text-right">{fmt(food.calories)}</span>
+              {[food.proteins, food.carbohydrates, food.fats].map((v, i) => (
+                <span key={i} className="t-data w-[60px] text-right text-ink2">{fmt(v, 1)}</span>
+              ))}
+              <span className="ml-[29px]">{actions(food)}</span>
             </div>
-          )}
+          ))}
         </div>
-      )}
-    </Container>
+      ) : (
+        <div className="mt-[10px]">
+          {filteredFoods.map((food) => (
+            <div key={food.id} className="flex items-center gap-[10px] border-t border-line pb-[14px] pt-[11px] last:pb-0">
+              <div className="min-w-0 flex-1">
+                <h4 className="t-strong truncate">{food.name}</h4>
+                <p className="t-label-s mt-[2px] text-ink2">{fmt(food.quantity)} G</p>
+              </div>
+              <span className="t-data shrink-0 text-right">{fmt(food.calories)} KCAL</span>
+              {actions(food)}
+            </div>
+          ))}
+        </div>
+      ))}
+    </section>
   );
 };
 

@@ -1,5 +1,5 @@
 // hooks/useUser.ts
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export function useUser() {
   const [userId, setUserId] = useState<number | null>(5);

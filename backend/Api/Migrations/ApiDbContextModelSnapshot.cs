@@ -105,7 +105,6 @@ namespace Api.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("code")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");

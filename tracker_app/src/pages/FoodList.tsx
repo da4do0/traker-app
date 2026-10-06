@@ -1,20 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  Plus, 
-  Search,
-  Calendar,
-  UserCircle,
-  BarChart2,
-  Home
-} from "lucide-react";
-import Header from "../components/Header";
-import Container from "../components/container";
-import QuickStats from "../components/QuickStats";
+import { Plus, Search } from "lucide-react";
+import Shell, { PageHead } from "../components/Shell";
 import MealSection from "../components/MealSection";
 import EditFoodModal from "../components/EditFoodModal";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
-import ErrorDisplay from "../components/ErrorDisplay";
+import { Btn, DotBar, ErrorBanner, Glyph, RDot, fmt, splitSegments, useIsDesktop } from "../components/ui";
 import { APIDbHandler } from "../api/APIHandler";
 import { useUser } from "../hooks/UserInfo";
 import type { 
@@ -46,7 +37,7 @@ const MEAL_TYPES: MealType[] = [
   { id: "Colazione", name: "Colazione", emoji: "🌅", color: "yellow" },
   { id: "Pranzo", name: "Pranzo", emoji: "☀️", color: "orange" },
   { id: "Cena", name: "Cena", emoji: "🌙", color: "purple" },
-  { id: "Spuntino", name: "Spuntini", emoji: "🍎", color: "green" }
+  { id: "Spuntino", name: "Spuntino", emoji: "🍎", color: "green" }
 ] as const;
 
 const getMealName = (mealNumber: number): string => {
@@ -66,14 +57,14 @@ const getMealName = (mealNumber: number): string => {
 
 const FoodList: React.FC = () => {
   const navigate = useNavigate();
-  const { userId, username } = useUser();
+  const { userId } = useUser();
   
   // State management
   const [foodEntries, setFoodEntries] = useState<FoodEntry[]>([]);
   const [mealSections, setMealSections] = useState<MealSectionType[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [dailyStats, setDailyStats] = useState<DailyStats>({
     totalCalories: 0,
     totalProteins: 0,
@@ -86,6 +77,8 @@ const FoodList: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [goal, setGoal] = useState(2000);
+  const desktop = useIsDesktop();
 
   // Modal states
   const [editingFood, setEditingFood] = useState<FoodEntry | null>(null);
@@ -99,8 +92,14 @@ const FoodList: React.FC = () => {
 
 
       if (userId) {
-        const response: BackendFoodItem[] = await APIDbHandler.FoodList(userId);
-        
+        // quota giornaliera reale dell'utente (InfoUser), 2000 solo se non disponibile
+        const [response, info]: [BackendFoodItem[], any] = await Promise.all([
+          APIDbHandler.FoodList(userId),
+          APIDbHandler.InfoUser(userId).catch(() => null),
+        ]);
+        const calorieGoal = info?.userInfo?.dailyCalorieGoal || 2000;
+        setGoal(calorieGoal);
+
         // Transform API data to our FoodEntry format
         const entries: FoodEntry[] = response
           .filter((item: BackendFoodItem) => {
@@ -108,7 +107,7 @@ const FoodList: React.FC = () => {
             const itemDate = new Date(item.date).toISOString().split('T')[0];
             return itemDate === selectedDate;
           })
-          .map((item: BackendFoodItem, index: number) => ({
+          .map((item: BackendFoodItem) => ({
             id: item.id, // UserFood ID from backend
             foodId: item.foodId, // Food ID from backend
             name: item.name,
@@ -123,7 +122,7 @@ const FoodList: React.FC = () => {
           }));
   
         setFoodEntries(entries);
-        calculateDailyStats(entries);
+        calculateDailyStats(entries, calorieGoal);
         organizeMealSections(entries);
       }
       
@@ -140,7 +139,7 @@ const FoodList: React.FC = () => {
   };
 
   // Calculate daily statistics
-  const calculateDailyStats = (foods: FoodEntry[], calorieGoal: number = 2000) => {
+  const calculateDailyStats = (foods: FoodEntry[], calorieGoal: number = goal) => {
     const stats = foods.reduce(
       (acc, food) => {
         acc.totalCalories += food.calories;
@@ -225,7 +224,7 @@ const FoodList: React.FC = () => {
 
 
       // Call update API - APIHandler will format it correctly for the backend
-      const response = await APIDbHandler.UpdateFood(updatePayload);
+      await APIDbHandler.UpdateFood(updatePayload);
 
       // Update local state
       const updatedFoods = foodEntries.map(food => {
@@ -270,7 +269,7 @@ const FoodList: React.FC = () => {
       // Use the foodId directly as it's now the correct UserFood ID
       const userFoodId = typeof foodId === 'string' ? parseInt(foodId) : foodId;
       
-      const response = await APIDbHandler.DeleteFood(userFoodId);
+      await APIDbHandler.DeleteFood(userFoodId);
       
       // Update local state
       const updatedFoods = foodEntries.filter(food => food.id !== foodId);
@@ -304,152 +303,135 @@ const FoodList: React.FC = () => {
   }, [selectedDate, userId]);
 
 
+  // ---------- UI
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900 text-white p-2 md:p-6 pb-20 md:pb-6">
-        <Header />
-        <main className="max-w-4xl mx-auto mb-6">
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-white border-t-transparent" />
-          </div>
-        </main>
-      </div>
+      <Shell active="diario">
+        <PageHead title="diario" />
+        <div className="flex justify-center py-20">
+          <span className="size-8 animate-spin rounded-full border-2 border-ink border-t-transparent" />
+        </div>
+      </Shell>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-950 to-gray-900 text-white p-2 md:p-6 pb-20 md:pb-6">
-      <Header />
-      <main className="max-w-4xl mx-auto mb-6">
-        {/* Page Title */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-white">Il Mio Diario</h1>
-        </div>
+  const hasFood = foodEntries.length > 0;
+  // pasti con alimenti nell'ordine standard, quelli vuoti in fondo
+  const ordered = [...mealSections].sort((a, b) => Number(b.foods.length > 0) - Number(a.foods.length > 0));
+  const N = desktop ? 30 : 34;
+  const segs = splitSegments(ordered.filter((s) => s.foods.length).map((s) => s.totalCalories), dailyStats.calorieGoal, N);
+  const { totalCalories, totalProteins: p, totalCarbohydrates: c, totalFats: f, remainingCalories: left } = dailyStats;
+  const energy = c * 4 + p * 4 + f * 9;
+  const macros: [string, number, number][] = [["CARBO", c, c * 4], ["PROT", p, p * 4], ["GRASSI", f, f * 9]];
 
-        {/* Error Display */}
-        {error && (
-          <ErrorDisplay error={error} onDismiss={() => setError(null)} />
-        )}
-
-        {/* Quick Stats */}
-        <QuickStats stats={dailyStats} />
-
-        {/* Search and Quick Actions */}
-        <div className="mb-6">
-          {searchQuery ? (
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-              <input
-                type="text"
-                placeholder="Cerca alimenti..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-gray-900 border border-gray-800 rounded-xl pl-10 pr-4 py-3 text-white placeholder-gray-400 focus:border-emerald-500 focus:outline-none"
-              />
+  const total = (
+    <section className={`rounded-[28px] bg-tile p-5 ${hasFood ? "pb-7 lg:pb-[50px]" : "pb-9 lg:pb-[70px]"} lg:rounded-[32px] lg:p-7 lg:pt-[26px]`}>
+      <span className="t-label text-ink2">TOTALE DEL GIORNO</span>
+      <div className="mt-[14px] flex items-end gap-x-[10px] lg:mt-[18px] lg:flex-col lg:items-start">
+        <RDot text={fmt(totalCalories)} p={[7, 8]} />
+        <span className="t-label text-ink2 lg:mt-3">/ {fmt(dailyStats.calorieGoal)} KCAL</span>
+      </div>
+      <Glyph className="mt-[18px]" total={N} h={desktop ? 20 : 18} gap={3} groupGap={8} groups={segs.map((n) => ({ n }))} />
+      {desktop ? (
+        <>
+          <div className="mt-[18px] grid grid-cols-2">
+            <div>
+              <span className="t-label-s block text-ink2">{left < 0 ? "OLTRE" : "RESTANO"}</span>
+              <span className={`t-data-l mt-1 block ${left < 0 ? "text-signal" : ""}`}>{fmt(Math.abs(left))} KCAL</span>
             </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <button
-                onClick={() => setSearchQuery(" ")}
-                className="flex items-center justify-center gap-2 p-3 rounded-xl border text-gray-300 hover:text-white transition-colors"
-                style={{
-                  backgroundColor: '#6B728066' + '1A',
-                  borderColor: '#6B728066' + '66'
-                }}
-              >
-                <Search size={16} />
-                <span className="text-sm">Cerca</span>
-              </button>
-              {MEAL_TYPES.slice(0, 3).map((meal) => (
-                <button
-                  key={meal.id}
-                  className="flex items-center justify-center gap-2 p-3 rounded-xl border text-gray-300 hover:text-white transition-colors"
-                  style={{
-                    backgroundColor: '#6B728066' + '1A',
-                    borderColor: '#6B728066' + '66'
-                  }}
-                >
-                  <span>{meal.emoji}</span>
-                  <span className="text-sm hidden sm:inline">{meal.name}</span>
-                </button>
-              ))}
-            </div>
+            {hasFood && (
+              <div>
+                <span className="t-label-s block text-ink2">USATA</span>
+                <span className="t-data-l mt-1 block">{fmt(Math.round(dailyStats.progressPercentage))}%</span>
+              </div>
+            )}
+          </div>
+          {hasFood && (
+            <>
+              <div className="mt-5 h-px bg-line" />
+              <div className="mt-[19px] flex flex-col gap-[26px]">
+                {macros.map(([k, g, kcal]) => (
+                  <div key={k} className="flex h-4 items-center">
+                    <span className="t-label w-[72px] text-ink2">{k}</span>
+                    <DotBar n={14} on={energy ? Math.round((kcal / energy) * 14) : 0} size={7} gap={4} />
+                    <span className="t-data ml-auto">{fmt(Math.round(g))} G</span>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
+        </>
+      ) : hasFood && (
+        <div className="mt-5 flex justify-between">
+          <span className={`t-data ${left < 0 ? "text-signal" : ""}`}>{left < 0 ? "OLTRE" : "RESTANO"} {fmt(Math.abs(left))}</span>
+          <span className="t-label text-ink2">C {fmt(Math.round(c))} · P {fmt(Math.round(p))} · G {fmt(Math.round(f))}</span>
         </div>
-
-        {/* Meal Sections */}
-        <div className="space-y-4">
-          {mealSections.map((section) => (
-            <MealSection
-              key={section.id}
-              section={section}
-              onToggleExpanded={handleToggleMealSection}
-              onEditFood={setEditingFood}
-              onDeleteFood={setDeletingFood}
-              searchQuery={searchQuery}
-            />
-          ))}
-        </div>
-
-        {/* Empty State */}
-        {foodEntries.length === 0 && !loading && (
-          <Container>
-            <div className="text-center py-12">
-              <Calendar className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-              <h3 className="text-white font-semibold mb-2">Nessun alimento registrato</h3>
-              <p className="text-gray-400 mb-6">
-                Inizia ad aggiungere i tuoi pasti per tracciare la tua alimentazione
-              </p>
-              <button
-                onClick={() => navigate("/food")}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center gap-2 mx-auto min-h-[48px]"
-              >
-                <Plus size={18} />
-                Aggiungi Primo Alimento
-              </button>
-            </div>
-          </Container>
-        )}
-      </main>
-
-      {/* Floating Action Button */}
-      {foodEntries.length > 0 && (
-        <button
-          onClick={() => navigate("/food")}
-          className="fixed bottom-20 right-4 md:bottom-6 md:right-6 bg-emerald-500 hover:bg-emerald-600 text-white p-4 rounded-full shadow-2xl transition-all duration-200 hover:scale-105 z-50 min-h-[56px] min-w-[56px] flex items-center justify-center"
-        >
-          <Plus size={24} />
-        </button>
       )}
+    </section>
+  );
 
-      {/* Footer mobile */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-gray-950 border-t border-gray-800 flex justify-around items-center py-2 md:hidden z-20">
-        <button 
-          onClick={() => navigate("/")}
-          className="flex flex-col items-center text-gray-400 hover:text-emerald-400 transition-colors"
-        >
-          <Home className="w-6 h-6" />
-          <span className="text-xs">Home</span>
-        </button>
-        <button className="flex flex-col items-center text-emerald-400">
-          <Calendar className="w-6 h-6" />
-          <span className="text-xs">Diario</span>
-        </button>
-        <button 
-          onClick={() => navigate("/food")}
-          className="flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-white rounded-full w-12 h-12 shadow-lg -mt-8 border-4 border-gray-950"
-        >
-          <Plus className="w-7 h-7" />
-        </button>
-        <button className="flex flex-col items-center text-gray-400">
-          <BarChart2 className="w-6 h-6" />
-          <span className="text-xs">Statistiche</span>
-        </button>
-        <button className="flex flex-col items-center text-gray-400">
-          <UserCircle className="w-6 h-6" />
-          <span className="text-xs">Profilo</span>
-        </button>
-      </footer>
+  const filter = (
+    <label className="flex h-12 cursor-text items-center gap-[10px] rounded-full bg-control px-[18px] lg:w-[340px] lg:gap-3">
+      <Search size={18} strokeWidth={1.5} className="shrink-0 text-ink2" />
+      <input
+        type="text"
+        placeholder="Filtra gli alimenti di oggi"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="t-body min-w-0 flex-1 bg-transparent text-ink caret-ink outline-none"
+      />
+    </label>
+  );
+
+  // anello di punti concentrici (illustrazione dello stato vuoto)
+  const rings: [number, number, number][] = desktop ? [[40, 96, 3.5], [28, 62, 3]] : [[36, 78, 3], [24, 50, 2.5]];
+  const C = rings[0][1] + rings[0][2];
+  const empty = (
+    <section className="flex flex-col items-center px-5 text-center lg:h-[560px] lg:rounded-[32px] lg:bg-tile">
+      <svg width={2 * C} height={2 * C} className="mt-[47px] lg:mt-[84px]" aria-hidden>
+        {rings.flatMap(([n, r, s]) => Array.from({ length: n }, (_, i) => (
+          <circle key={`${r}-${i}`} cx={C + r * Math.cos((2 * Math.PI * i) / n)} cy={C + r * Math.sin((2 * Math.PI * i) / n)} r={s} className="fill-dotoff" />
+        )))}
+        <circle cx={C} cy={C} r={desktop ? 5 : 4} className="fill-ink" />
+      </svg>
+      <h2 className="t-title mt-[29px] lg:t-title-l lg:mt-10">Ancora niente oggi</h2>
+      <p className="t-body mt-2 max-w-[310px] text-ink2 lg:mt-[10px] lg:max-w-[443px]">
+        Cerca un alimento o scansiona un codice a barre: lo trovi qui, diviso per pasto{desktop ? ", con calorie e macro" : ""}.
+      </p>
+      <Btn icon={<Plus size={20} strokeWidth={2} />} onClick={() => navigate("/food")} className="mt-[22px] w-[270px] lg:mt-7 lg:w-[300px]">
+        Aggiungi il primo alimento
+      </Btn>
+    </section>
+  );
+
+  const meals = ordered.map((section) => (
+    <MealSection
+      key={section.id}
+      section={section}
+      onToggleExpanded={handleToggleMealSection}
+      onEditFood={setEditingFood}
+      onDeleteFood={setDeletingFood}
+      searchQuery={searchQuery}
+    />
+  ));
+
+  return (
+    <Shell active="diario">
+      <PageHead title="diario" right={desktop && hasFood && filter} />
+
+      {error && <div className="mb-3"><ErrorBanner onDismiss={() => setError(null)}>{error}</ErrorBanner></div>}
+
+      {desktop ? (
+        <div className="grid grid-cols-12 items-start gap-6">
+          <div className="sticky top-8 col-span-4">{total}</div>
+          <div className="col-span-8 flex flex-col gap-3">{hasFood ? meals : empty}</div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {total}
+          {hasFood ? <>{filter}{meals}</> : empty}
+        </div>
+      )}
 
       {/* Modals */}
       <EditFoodModal
@@ -467,7 +449,7 @@ const FoodList: React.FC = () => {
         onConfirm={(foodId) => handleDeleteFood(foodId)}
         isLoading={isDeleting}
       />
-    </div>
+    </Shell>
   );
 };
 

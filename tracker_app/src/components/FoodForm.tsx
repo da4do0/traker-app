@@ -1,11 +1,10 @@
 import React, { useState, useMemo, useCallback, useEffect} from "react";
-import Container from "./container";
 import { APIDbHandler } from "../api/APIHandler";
-import { X, Utensils, Plus, Minus } from "lucide-react";
+import { Plus, Minus } from "lucide-react";
 import {useUser} from "../hooks/UserInfo";
 import type { FoodDetailHover } from "../types/Food";
-
-// TypeScript interfaces - Using imported FoodDetailHover instead
+import { Btn, CloseBtn, Dot, Glyph, IconBtn, Modal, Monogram, Seg, fmt, useIsDesktop } from "./ui";
+import { portionGrams } from "./FoodPanel";
 
 interface FoodFormProps {
   food: FoodDetailHover;
@@ -13,13 +12,22 @@ interface FoodFormProps {
   onSuccess?: () => void;
 }
 
+const MEAL_OPTIONS = [
+  { value: "Breakfast", label: "Colazione" },
+  { value: "Lunch", label: "Pranzo" },
+  { value: "Dinner", label: "Cena" },
+  { value: "Snack", label: "Spuntino" },
+];
+
 const FoodForm: React.FC<FoodFormProps> = ({food, back, onSuccess}) => {
 
   const [quantity, setQuantity] = useState("100");
   const [usernameLocal, setUsernameLocal] = useState("");
   const [mealType, setMealType] = useState("Lunch");
+  const [today, setToday] = useState<{ eaten: number; goal: number } | null>(null);
 
-  const { username, setUsername } = useUser();
+  const { userId, username, setUsername } = useUser();
+  const desktop = useIsDesktop();
 
   useEffect(()=>{
     if(username === ""){
@@ -30,6 +38,17 @@ const FoodForm: React.FC<FoodFormProps> = ({food, back, onSuccess}) => {
       }
     }
   }, [username])
+
+  // Kcal già mangiate oggi e quota (API esistente InfoUser) per "Dopo l'aggiunta"
+  useEffect(() => {
+    if (!userId) return;
+    APIDbHandler.InfoUser(userId)
+      .then((r) => setToday({
+        goal: r?.userInfo?.dailyCalorieGoal ?? 0,
+        eaten: (r?.data?.food ?? []).reduce((t: number, i: any) => t + (i.food?.calories ?? 0) * i.quantity / 100, 0),
+      }))
+      .catch(() => setToday(null));
+  }, [userId]);
 
   // Memoized nutrition calculations for performance
   const calculatedNutrition = useMemo(() => {
@@ -114,229 +133,79 @@ const FoodForm: React.FC<FoodFormProps> = ({food, back, onSuccess}) => {
     }
   }
 
+  // ---------- anteprima "Dopo l'aggiunta"
+  const N = desktop ? 40 : 34;
+  const portion = portionGrams(food.servingSize);
+  const lit = today?.goal ? Math.min(N, Math.round((today.eaten / today.goal) * N)) : 0;
+  const after = today?.goal ? Math.min(N, Math.round(((today.eaten + calculatedNutrition.calories) / today.goal) * N)) : 0;
+  const left = today ? Math.round(today.goal - today.eaten - calculatedNutrition.calories) : 0;
+  const shownQty = quantity === "" ? "0" : quantity.replace(".", ",");
+
   return (
-    <div className="max-w-[70vw] w-full max-h-[90vh] overflow-y-auto ">
-      <Container css="p-4">
-        {/* Header compatto */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className="bg-green-900/50 rounded-lg p-1.5">
-              <Utensils color="green" size={18} />
-            </div>
-            <h2 className="text-white font-medium">{food?.name}</h2>
-          </div>
-            <button
-              className="text-gray-400 hover:text-white p-1"
-              onClick={()=>{
-                back(null);
-              }}
-            >
-              <X size={18} />
-            </button>
+    <Modal onClose={() => back(null)}>
+      {/* Intestazione */}
+      <div className="flex items-center gap-3 lg:gap-4">
+        <Monogram name={food?.name} size={desktop ? 52 : 48} p={desktop ? 3.4 : 3.2} r={desktop ? 14 : 12} />
+        <div className="min-w-0 flex-1">
+          <h2 className={`${desktop ? "t-title" : "t-strong"} truncate`}>{food?.name}</h2>
+          <p className="t-label-s mt-1 truncate text-ink2">{[food?.brands, `${fmt(Math.round(food?.nutrition.calories100g ?? 0))} KCAL/100 G`].filter(Boolean).join(" · ").toUpperCase()}</p>
         </div>
+        <CloseBtn onClick={() => back(null)} />
+      </div>
 
-        {/* Layout orizzontale principale */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Colonna sinistra - Info e controlli */}
-          <div className="space-y-3">
-            {/* Info alimento compatta */}
-            <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg">
-              <img
-                src={food?.imageUrl}
-                alt={food?.name}
-                className="w-12 h-12 object-cover rounded-lg"
-                loading="lazy"
-              />
-              <div className="flex-1 min-w-0">
-                <p className="text-gray-400 text-xs truncate">{food?.brands}</p>
-                <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
-                  Score {food?.nutritionGrade}
-                </span>
-              </div>
-            </div>
+      {/* Pasto */}
+      <span className="t-label mt-[22px] block text-ink2 lg:mt-7">PASTO</span>
+      <Seg className="mt-2" value={mealType} onChange={setMealType} options={MEAL_OPTIONS} />
 
-            {/* Selezione tipo pasto */}
-            <div className="bg-gray-800 rounded-lg p-3">
-              <h3 className="text-white text-sm font-medium mb-2">Tipo di pasto</h3>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { value: "Breakfast", label: "Colazione", emoji: "🌅" },
-                  { value: "Lunch", label: "Pranzo", emoji: "☀️" },
-                  { value: "Dinner", label: "Cena", emoji: "🌙" },
-                  { value: "Snack", label: "Snack", emoji: "🍎" },
-                ].map((meal) => (
-                  <button
-                    key={meal.value}
-                    onClick={() => setMealType(meal.value)}
-                    className={`p-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-1 ${
-                      mealType === meal.value
-                        ? "bg-green-600 text-white"
-                        : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                    }`}
-                  >
-                    <span>{meal.emoji}</span>
-                    {meal.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+      {/* Quantità */}
+      <span className="t-label mt-6 block text-ink2 lg:mt-[26px]">QUANTITÀ</span>
+      <div className="mt-[10px] flex items-center">
+        <IconBtn size={56} aria-label="Meno 10 g" onClick={() => handleIncrement(-10)} disabled={parseFloat(quantity) <= 0}><Minus size={22} strokeWidth={1.75} /></IconBtn>
+        <label className="relative mx-auto flex cursor-text items-end gap-2">
+          <Dot text={shownQty} p={7} />
+          <span className="t-label pb-[2px] text-ink2">G</span>
+          {/* il numero dot-matrix è la vista; l'input trasparente sopra riceve la digitazione */}
+          <input
+            value={quantity}
+            onChange={(e) => handleQuantityChange(e.target.value.replace(",", "."))}
+            inputMode="decimal"
+            aria-label="Quantità in grammi"
+            className="absolute inset-0 w-full cursor-text bg-transparent text-transparent caret-ink outline-none"
+          />
+        </label>
+        <IconBtn size={56} aria-label="Più 10 g" onClick={() => handleIncrement(10)} disabled={parseFloat(quantity) >= 9999}><Plus size={22} strokeWidth={1.75} /></IconBtn>
+      </div>
+      {validationState.errorMessage && <p className="t-body-s mt-2 text-center text-signal">{validationState.errorMessage}</p>}
+      <div className="mt-[18px] grid grid-cols-4 gap-2">
+        {["50", "100", "150", "200"].map((preset) => (
+          <button key={preset} onClick={() => handleQuickSelect(preset)}
+            className={`t-label h-9 cursor-pointer rounded-full border ${quantity === preset ? "border-ink" : "border-ink3"}`}>
+            {preset} G
+          </button>
+        ))}
+      </div>
+      {portion > 0 && <p className="t-body-s mt-[10px] text-ink2">Porzione in etichetta: {fmt(portion)} g</p>}
 
-            {/* Controlli quantità compatti */}
-            <div className="bg-gray-800 rounded-lg p-3">
-              <h3 className="text-white text-sm font-medium mb-2">Quantità</h3>
-
-              {/* Quick select più compatto */}
-              <div className="flex gap-1 mb-2">
-                {["50", "100", "150", "200"].map((preset) => (
-                  <button
-                    key={preset}
-                    onClick={() => handleQuickSelect(preset)}
-                    className={`flex-1 py-1.5 px-2 rounded text-xs font-medium transition-colors ${
-                      quantity === preset
-                        ? "bg-green-600 text-white"
-                        : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                    }`}
-                  >
-                    {preset}g
-                  </button>
-                ))}
-              </div>
-
-              {/* Input con controlli inline */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleIncrement(-10)}
-                  className="bg-gray-700 hover:bg-gray-600 text-white w-8 h-8 rounded flex items-center justify-center"
-                  disabled={parseFloat(quantity) <= 0}
-                >
-                  <Minus size={14} />
-                </button>
-
-                <div className="flex-1">
-                  <input
-                    value={quantity}
-                    onChange={(e) => handleQuantityChange(e.target.value)}
-                    className="w-full bg-gray-700 text-white text-center py-1.5 px-2 rounded text-sm focus:outline-none focus:ring-1 focus:ring-green-500"
-                    placeholder="100"
-                  />
-                  {validationState.errorMessage && (
-                    <p className="text-red-400 text-xs mt-1">
-                      {validationState.errorMessage}
-                    </p>
-                  )}
-                </div>
-
-                <button
-                  onClick={() => handleIncrement(10)}
-                  className="bg-gray-700 hover:bg-gray-600 text-white w-8 h-8 rounded flex items-center justify-center"
-                  disabled={parseFloat(quantity) >= 9999}
-                >
-                  <Plus size={14} />
-                </button>
-              </div>
-
-              <p className="text-gray-400 text-xs mt-1 text-center">
-                Consigliata: {food.servingSize}
-              </p>
-            </div>
-
-            {/* Info prodotto compatta */}
-            <div className="bg-gray-800 rounded-lg p-3">
-              <h4 className="text-white text-sm font-medium mb-2">Dettagli</h4>
-              <div className="text-gray-300 text-xs space-y-1">
-                <p>
-                  <span className="text-gray-400">Categoria:</span>{" "}
-                  {food.categories}
-                </p>
-                <p>
-                  <span className="text-gray-400">Allergeni:</span>{" "}
-                  {food.allergens?.length > 0 ? food.allergens.join(", ") : "Nessun allergene"}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Colonna destra - Valori nutrizionali */}
-          <div className="space-y-3">
-            {/* Calorie hero compatte */}
-            <div className="bg-gradient-to-r from-red-500/20 to-red-600/20 border border-red-500/40 rounded-lg p-3">
-              <div className="text-center">
-                <p className="text-red-300 text-xs font-medium">
-                  Calorie per {quantity || "0"}g
-                </p>
-                <p className="text-white text-2xl font-bold" aria-live="polite">
-                  {calculatedNutrition?.calories}{" "}
-                  <span className="text-sm font-normal">kcal</span>
-                </p>
-                <div className="mt-2 bg-gray-700 rounded-full h-1.5">
-                  <div
-                    className="bg-red-500 h-1.5 rounded-full transition-all duration-300"
-                    style={{
-                      width: `${Math.min(
-                        100,
-                        (calculatedNutrition?.calories / 2000) * 100
-                      )}%`
-                    }}
-                  />
-                </div>
-                <p className="text-gray-400 text-xs mt-1">
-                  {Math.round((calculatedNutrition?.calories / 2000) * 100)}% del
-                  fabbisogno
-                </p>
-              </div>
-            </div>
-
-            {/* Macronutrienti compatti */}
-            <div className="grid grid-cols-3 gap-2">
-              <div className="bg-blue-500/20 border border-blue-500/40 rounded-lg p-2 text-center">
-                <p className="text-blue-300 text-xs">Proteine</p>
-                <p className="text-white text-sm font-bold">
-                  {calculatedNutrition.protein}g
-                </p>
-              </div>
-              <div className="bg-yellow-500/20 border border-yellow-500/40 rounded-lg p-2 text-center">
-                <p className="text-yellow-300 text-xs">Carbs</p>
-                <p className="text-white text-sm font-bold">
-                  {calculatedNutrition.carbs}g
-                </p>
-              </div>
-              <div className="bg-purple-500/20 border border-purple-500/40 rounded-lg p-2 text-center">
-                <p className="text-purple-300 text-xs">Grassi</p>
-                <p className="text-white text-sm font-bold">
-                  {calculatedNutrition.fat}g
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={addFood}
-              disabled={!validationState.isValid}
-              className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 disabled:from-gray-600 disabled:to-gray-500 text-white py-2.5 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-all"
-            >
-              <span>✓</span>
-              Aggiungi {quantity || "0"}g
-            </button>
-            {/* Pulsanti azione */}
-            {/* <div className="space-y-2">
-
-              <div className="flex gap-2">
-                <button className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 py-2 px-3 rounded-lg text-sm transition-colors border border-gray-600">
-                  Salva
-                </button>
-                {onToggleFavorite && (
-                  <button
-                    onClick={handleToggleFavorite}
-                    className="px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-600 text-gray-300 rounded-lg transition-colors"
-                  >
-                    ❤️
-                  </button>
-                )}
-              </div>
-            </div> */}
-          </div>
+      {/* Dopo l'aggiunta */}
+      <div className="mt-[16px] rounded-[20px] bg-control px-5 pb-[18px] pt-[18px]">
+        <div className="flex justify-between">
+          <span className="t-label text-ink2">DOPO L’AGGIUNTA</span>
+          {today && <span className={`t-label ${left < 0 ? "text-signal" : ""}`}>{left < 0 ? `OLTRE DI ${fmt(-left)} KCAL` : `RESTANO ${fmt(left)} KCAL`}</span>}
         </div>
-      </Container>
-    </div>
+        <Glyph className="mt-[14px]" total={N} h={20} gap={desktop ? 3 : 3.1} groupGap={desktop ? 3 : 3.1} groups={[{ n: lit }]} outline={Math.max(0, after - lit)} />
+        <p className="t-label-s mt-[18px]">
+          +{fmt(Math.round(calculatedNutrition.calories))} KCAL · P {fmt(calculatedNutrition.protein, 1)} · C {fmt(calculatedNutrition.carbs, 1)} · G {fmt(calculatedNutrition.fat, 1)}
+        </p>
+      </div>
+
+      {/* Azioni */}
+      <div className="mt-[22px] flex gap-4 lg:mt-[46px] lg:justify-between">
+        {desktop && <Btn kind="secondary" className="w-[160px]" onClick={() => back(null)}>Annulla</Btn>}
+        <Btn icon={<Plus size={20} />} onClick={addFood} disabled={!validationState.isValid} className="flex-1 lg:w-[240px] lg:flex-none">
+          Aggiungi {quantity || "0"} g
+        </Btn>
+      </div>
+    </Modal>
   );
 };
 

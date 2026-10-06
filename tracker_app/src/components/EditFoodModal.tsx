@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Scale } from 'lucide-react';
-import Container from './container';
+import { Minus, Plus } from 'lucide-react';
 import type { EditFoodModalProps, EditFoodData, MealType } from '../types/FoodList';
-import { APIDbHandler } from "../api/APIHandler";
+import { Btn, CloseBtn, Dot, IconBtn, Modal, Seg, fmt } from './ui';
 
 const MEAL_TYPES: MealType[] = [
   { id: "Colazione", name: "Colazione", emoji: "🌅", color: "yellow" },
   { id: "Pranzo", name: "Pranzo", emoji: "☀️", color: "orange" },
   { id: "Cena", name: "Cena", emoji: "🌙", color: "purple" },
-  { id: "Spuntino", name: "Spuntini", emoji: "🍎", color: "green" }
+  { id: "Spuntino", name: "Spuntino", emoji: "🍎", color: "green" }
 ] as const;
 
 const EditFoodModal: React.FC<EditFoodModalProps> = ({
@@ -39,14 +38,14 @@ const EditFoodModal: React.FC<EditFoodModalProps> = ({
   const handleQuantityChange = (value: string) => {
     const numValue = parseFloat(value);
     setQuantity(isNaN(numValue) ? 0 : numValue);
-    
+
     const error = validateQuantity(numValue);
     setErrors(prev => ({ ...prev, quantity: error || undefined }));
   };
 
   const handleSave = async () => {
     if (!food) return;
-    
+
     const quantityError = validateQuantity(quantity);
     if (quantityError) {
       setErrors({ quantity: quantityError });
@@ -64,8 +63,9 @@ const EditFoodModal: React.FC<EditFoodModalProps> = ({
 
   const calculateNewNutrition = () => {
     if (!food) return null;
-    
-    const ratio = quantity / 100; // Assuming base values are per 100g
+
+    // i valori di `food` sono già riferiti alla quantità registrata (non a 100 g)
+    const ratio = food.quantity ? quantity / food.quantity : 0;
     return {
       calories: Math.round(food.calories * ratio),
       proteins: Math.round(food.proteins * ratio * 10) / 10,
@@ -76,126 +76,75 @@ const EditFoodModal: React.FC<EditFoodModalProps> = ({
 
   if (!isOpen || !food) return null;
 
-  const newNutrition = calculateNewNutrition();
+  const newNutrition = calculateNewNutrition()!;
+  const delta = newNutrition.calories - food.calories;
+  const close = isLoading ? () => {} : onClose;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <Container css="w-full max-w-md max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="bg-blue-900/50 rounded-lg p-2">
-              <Scale className="w-5 h-5 text-blue-400" />
-            </div>
-            <div>
-              <h2 className="text-white font-semibold">Modifica Alimento</h2>
-              <p className="text-gray-400 text-sm">{food.name}</p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white p-1"
-            disabled={isLoading}
-          >
-            <X size={20} />
-          </button>
+    <Modal onClose={close} width={520}>
+      {/* Header */}
+      <div className="-mt-[6px] flex items-start justify-between lg:mt-1">
+        <div className="mt-[2px] min-w-0 lg:mt-0">
+          <h2 className="t-title">Modifica</h2>
+          <p className="t-label-s mt-1 truncate text-ink2">{food.name} · {food.meal}</p>
         </div>
+        <CloseBtn onClick={onClose} disabled={isLoading} />
+      </div>
 
-        {/* Quantity Input */}
-        <div className="mb-4">
-          <label className="block text-gray-300 text-sm font-medium mb-2">
-            Quantità (g)
-          </label>
+      {/* Quantity */}
+      <span className="t-label mt-[26px] block text-ink2 lg:mt-[34px]">QUANTITÀ</span>
+      <div className="mt-[10px] flex items-center">
+        <IconBtn size={56} aria-label="Meno 10 g" onClick={() => handleQuantityChange(String(Math.max(0, quantity - 10)))} disabled={isLoading || quantity <= 0}>
+          <Minus size={22} strokeWidth={1.75} />
+        </IconBtn>
+        <label className="relative mx-auto flex cursor-text items-end gap-2">
+          <Dot text={fmt(quantity, quantity % 1 ? 1 : 0)} p={7} />
+          <span className="t-label pb-[2px] text-ink2">G</span>
           <input
             type="number"
             value={quantity}
             onChange={(e) => handleQuantityChange(e.target.value)}
-            className={`w-full bg-gray-800 border rounded-lg px-3 py-2 text-white ${
-              errors.quantity ? 'border-red-500' : 'border-gray-600'
-            } focus:border-blue-500 focus:outline-none`}
             min="1"
             max="9999"
             step="1"
             disabled={isLoading}
+            aria-label="Quantità in grammi"
+            className="absolute inset-0 w-full cursor-text bg-transparent text-transparent caret-ink outline-none"
           />
-          {errors.quantity && (
-            <p className="text-red-400 text-sm mt-1">{errors.quantity}</p>
-          )}
-        </div>
+        </label>
+        <IconBtn size={56} aria-label="Più 10 g" onClick={() => handleQuantityChange(String(Math.min(9999, quantity + 10)))} disabled={isLoading || quantity >= 9999}>
+          <Plus size={22} strokeWidth={1.75} />
+        </IconBtn>
+      </div>
+      <p className={`t-body-s mt-4 text-center lg:mt-[14px] ${errors.quantity ? "text-signal" : "text-ink2"}`}>
+        {errors.quantity || `Prima: ${fmt(food.quantity)} g`}
+      </p>
 
-        {/* Meal Selection */}
-        <div className="mb-4">
-          <label className="block text-gray-300 text-sm font-medium mb-2">
-            Pasto
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            {MEAL_TYPES.map((meal) => (
-              <button
-                key={meal.id}
-                onClick={() => setSelectedMeal(meal.id)}
-                className={`p-3 rounded-lg border transition-all ${
-                  selectedMeal === meal.id
-                    ? 'border-blue-500 bg-blue-900/30'
-                    : 'border-gray-600 bg-gray-800 hover:border-gray-500'
-                } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                disabled={isLoading}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{meal.emoji}</span>
-                  <span className="text-white text-sm">{meal.name}</span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
+      {/* Meal Selection */}
+      <span className="t-label mt-[18px] block text-ink2 lg:mt-5">PASTO</span>
+      <Seg className="mt-2" value={selectedMeal} onChange={(v) => !isLoading && setSelectedMeal(v)}
+        options={MEAL_TYPES.map((m) => ({ value: m.id, label: m.name }))} />
 
-        {/* Nutrition Preview */}
-        {newNutrition && (
-          <div className="mb-4 p-3 bg-gray-800 rounded-lg">
-            <h3 className="text-gray-300 text-sm font-medium mb-2">Valori Nutrizionali Aggiornati</h3>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="text-orange-400">
-                <span className="text-gray-400">Calorie:</span> {newNutrition.calories} kcal
-              </div>
-              <div className="text-blue-400">
-                <span className="text-gray-400">Proteine:</span> {newNutrition.proteins}g
-              </div>
-              <div className="text-green-400">
-                <span className="text-gray-400">Carboidrati:</span> {newNutrition.carbohydrates}g
-              </div>
-              <div className="text-purple-400">
-                <span className="text-gray-400">Grassi:</span> {newNutrition.fats}g
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Action Buttons */}
-        <div className="flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 px-4 rounded-lg font-medium transition-colors disabled:opacity-50"
-            disabled={isLoading}
-          >
-            Annulla
-          </button>
-          <button
-            onClick={handleSave}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-            disabled={isLoading || !!errors.quantity}
-          >
-            {isLoading ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-            ) : (
-              <>
-                <Save size={16} />
-                Salva
-              </>
-            )}
-          </button>
+      {/* Nutrition Preview */}
+      <div className="mt-5 rounded-[20px] bg-control px-5 pb-5 pt-[14px]">
+        <div className="flex items-center justify-between">
+          <span className="t-label text-ink2">VALORI AGGIORNATI</span>
+          <span className="t-data-l">{fmt(newNutrition.calories)} KCAL</span>
         </div>
-      </Container>
-    </div>
+        <div className="mt-[18px] flex justify-between">
+          <span className="t-label-s">P {fmt(newNutrition.proteins, 1)} · C {fmt(newNutrition.carbohydrates, 1)} · G {fmt(newNutrition.fats, 1)}</span>
+          <span className="t-label-s text-ink2">{delta >= 0 ? "+" : "−"}{fmt(Math.abs(delta))} KCAL</span>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="mb-6 mt-[34px] flex gap-4 lg:-mb-2 lg:mt-[26px] lg:justify-end">
+        <Btn kind="secondary" onClick={onClose} disabled={isLoading} className="flex-1 lg:w-[160px] lg:flex-none">Annulla</Btn>
+        <Btn onClick={handleSave} disabled={isLoading || !!errors.quantity} className="flex-1 lg:w-[160px] lg:flex-none">
+          {isLoading ? <span className="size-4 animate-spin rounded-full border-2 border-void border-t-transparent" /> : "Salva"}
+        </Btn>
+      </div>
+    </Modal>
   );
 };
 

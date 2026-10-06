@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Api.Migrations
 {
     [DbContext(typeof(ApiDbContext))]
-    [Migration("20250730182703_EditedUser")]
-    partial class EditedUser
+    [Migration("20261006081454_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -46,11 +46,14 @@ namespace Api.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("User")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Activities");
                 });
@@ -70,27 +73,6 @@ namespace Api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Categories");
-                });
-
-            modelBuilder.Entity("Api.model.Element", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Label")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Elements");
                 });
 
             modelBuilder.Entity("Api.model.Food", b =>
@@ -125,8 +107,7 @@ namespace Api.Migrations
                     b.Property<int>("Proteins")
                         .HasColumnType("int");
 
-                    b.Property<string>("User")
-                        .IsRequired()
+                    b.Property<string>("code")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
@@ -134,7 +115,22 @@ namespace Api.Migrations
                     b.ToTable("Foods");
                 });
 
-            modelBuilder.Entity("Api.model.Formato", b =>
+            modelBuilder.Entity("Api.model.FoodIngredient", b =>
+                {
+                    b.Property<int>("FoodId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IngredientId")
+                        .HasColumnType("int");
+
+                    b.HasKey("FoodId", "IngredientId");
+
+                    b.HasIndex("IngredientId");
+
+                    b.ToTable("FoodIngredients");
+                });
+
+            modelBuilder.Entity("Api.model.Ingredient", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -142,15 +138,50 @@ namespace Api.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("IdCibo")
-                        .HasColumnType("int");
+                    b.Property<string>("brand")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("IdElemento")
-                        .HasColumnType("int");
+                    b.Property<string>("name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Formati");
+                    b.ToTable("Ingredients");
+                });
+
+            modelBuilder.Entity("Api.model.Misuration", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<float>("FFMI")
+                        .HasColumnType("real");
+
+                    b.Property<float>("Height")
+                        .HasColumnType("real");
+
+                    b.Property<float>("IMC")
+                        .HasColumnType("real");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<float>("Weight")
+                        .HasColumnType("real");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Misurations");
                 });
 
             modelBuilder.Entity("Api.model.User", b =>
@@ -161,9 +192,18 @@ namespace Api.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("ActivityLevel")
+                        .HasColumnType("int");
+
                     b.Property<string>("Cognome")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DailyCalorieGoal")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("DateOfBirth")
                         .HasColumnType("datetime2");
@@ -171,9 +211,6 @@ namespace Api.Migrations
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<float>("Height")
-                        .HasColumnType("real");
 
                     b.Property<string>("Nome")
                         .IsRequired()
@@ -183,12 +220,18 @@ namespace Api.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<float?>("TargetWeight")
+                        .HasColumnType("real");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<float>("Weight")
-                        .HasColumnType("real");
+                    b.Property<int>("WeightGoal")
+                        .HasColumnType("int");
 
                     b.Property<string>("sex")
                         .IsRequired()
@@ -224,7 +267,105 @@ namespace Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("FoodId");
+
+                    b.HasIndex("UserId");
+
                     b.ToTable("UserFoods");
+                });
+
+            modelBuilder.Entity("Api.model.Activity", b =>
+                {
+                    b.HasOne("Api.model.Category", "Category")
+                        .WithMany("Activities")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Api.model.User", "User")
+                        .WithMany("Activities")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Api.model.FoodIngredient", b =>
+                {
+                    b.HasOne("Api.model.Food", "Food")
+                        .WithMany("FoodIngredients")
+                        .HasForeignKey("FoodId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Api.model.Ingredient", "Ingredient")
+                        .WithMany("FoodIngredients")
+                        .HasForeignKey("IngredientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Food");
+
+                    b.Navigation("Ingredient");
+                });
+
+            modelBuilder.Entity("Api.model.Misuration", b =>
+                {
+                    b.HasOne("Api.model.User", "User")
+                        .WithMany("Misurations")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Api.model.UserFood", b =>
+                {
+                    b.HasOne("Api.model.Food", "Food")
+                        .WithMany("UserFoods")
+                        .HasForeignKey("FoodId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Api.model.User", "User")
+                        .WithMany("UserFoods")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Food");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Api.model.Category", b =>
+                {
+                    b.Navigation("Activities");
+                });
+
+            modelBuilder.Entity("Api.model.Food", b =>
+                {
+                    b.Navigation("FoodIngredients");
+
+                    b.Navigation("UserFoods");
+                });
+
+            modelBuilder.Entity("Api.model.Ingredient", b =>
+                {
+                    b.Navigation("FoodIngredients");
+                });
+
+            modelBuilder.Entity("Api.model.User", b =>
+                {
+                    b.Navigation("Activities");
+
+                    b.Navigation("Misurations");
+
+                    b.Navigation("UserFoods");
                 });
 #pragma warning restore 612, 618
         }

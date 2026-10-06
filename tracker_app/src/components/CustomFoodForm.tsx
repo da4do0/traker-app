@@ -1,9 +1,7 @@
 import React, { useState, useMemo, useCallback } from "react";
-import Container from "./container";
-import Input from "./input";
 import { APIDbHandler } from "../api/APIHandler";
-import { X, Utensils, Plus, Minus, Apple, Camera } from "lucide-react";
-import { useUser } from "../hooks/UserInfo";
+import { X, ImageIcon } from "lucide-react";
+import { Btn, CloseBtn, Dot, DotBar, Field, Modal, RDot, fmt, useIsDesktop } from "./ui";
 
 interface CustomFoodFormProps {
   onClose: () => void;
@@ -21,14 +19,15 @@ const CustomFoodForm: React.FC<CustomFoodFormProps> = ({ onClose, onFoodCreated 
     fats: "",
     servingSize: "100",
   });
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const desktop = useIsDesktop();
 
   // Validation
   const validationState = useMemo(() => {
     const { name, calories, proteins, carbohydrates, fats } = formData;
-    
-    const isFormValid = 
+
+    const isFormValid =
       name.trim() !== "" &&
       !isNaN(parseFloat(calories)) && parseFloat(calories) >= 0 &&
       !isNaN(parseFloat(proteins)) && parseFloat(proteins) >= 0 &&
@@ -68,9 +67,9 @@ const CustomFoodForm: React.FC<CustomFoodFormProps> = ({ onClose, onFoodCreated 
 
   const handleSubmit = async () => {
     if (!validationState.isValid || isSubmitting) return;
-    
+
     setIsSubmitting(true);
-    
+
     try {
       const foodData = {
         Name: formData.name.trim(),
@@ -85,7 +84,7 @@ const CustomFoodForm: React.FC<CustomFoodFormProps> = ({ onClose, onFoodCreated 
 
       // Crea solo il cibo personalizzato
       const response = await APIDbHandler.AddCustomFood(foodData);
-      
+
       if (response) {
         onFoodCreated?.(foodData);
         onClose();
@@ -99,214 +98,106 @@ const CustomFoodForm: React.FC<CustomFoodFormProps> = ({ onClose, onFoodCreated 
     }
   };
 
+  // ---------- UI
+  const { calories, proteins, carbs, fats } = nutritionValues;
+  const energy = carbs * 4 + proteins * 4 + fats * 9;
+  const pct = (kcal: number) => (energy ? Math.round((kcal / energy) * 100) : 0);
+  const dots = desktop ? 20 : 16;
+  const macros = [
+    { k: "CARBO", g: carbs, p: pct(carbs * 4) },
+    { k: "PROT", g: proteins, p: pct(proteins * 4) },
+    { k: "GRASSI", g: fats, p: pct(fats * 9) },
+  ];
+
+  const num = (field: "calories" | "proteins" | "carbohydrates" | "fats", label: string, unit: string) => (
+    <Field label={label} unit={unit} type="number" inputMode="decimal" min="0" step="0.1" placeholder="0"
+      value={formData[field]} onChange={(e) => handleInputChange(field, e.target.value)} />
+  );
+
+  const fields = (
+    <div className="flex flex-col gap-[22px]">
+      <Field label="NOME" value={formData.name} onChange={(e) => handleInputChange("name", e.target.value)} placeholder="es. Pasta integrale fatta in casa" />
+      <Field label="DESCRIZIONE · FACOLTATIVA" value={formData.description} onChange={(e) => handleInputChange("description", e.target.value)} placeholder="es. Farina integrale e uova" />
+      <Field label="URL IMMAGINE · FACOLTATIVO" icon={<ImageIcon size={20} strokeWidth={1.5} />} value={formData.imageUrl} onChange={(e) => handleInputChange("imageUrl", e.target.value)} placeholder="https://…" />
+      <div className="mt-3 border-b border-line pb-2 lg:mt-2 lg:pb-[6px]"><span className="t-label">VALORI PER 100 G</span></div>
+      <div className="grid grid-cols-2 gap-4 lg:-mt-[6px]">
+        {num("calories", "CALORIE", "KCAL")}
+        {num("proteins", "PROTEINE", "G")}
+        {num("carbohydrates", "CARBOIDRATI", "G")}
+        {num("fats", "GRASSI", "G")}
+      </div>
+    </div>
+  );
+
+  const preview = (
+    <>
+      <span className="t-label text-ink2">ANTEPRIMA · 100 G</span>
+      <div className="mt-[14px] flex items-end gap-[10px] lg:mt-[18px]">
+        <RDot text={fmt(Math.round(calories))} p={[8, 9]} />
+        <span className="t-label pb-[2px] text-ink2">KCAL</span>
+      </div>
+      <div className="mt-[30px] flex flex-col gap-[14px] lg:mt-[38px] lg:gap-[22px]">
+        {macros.map((m) => (
+          <div key={m.k} className="flex items-center lg:block">
+            <span className="t-label w-[68px] text-ink2 lg:hidden">{m.k}</span>
+            <div className="hidden justify-between lg:flex"><span className="t-label text-ink2">{m.k}</span><span className="t-data">{fmt(m.g, 1)} G</span></div>
+            <DotBar n={dots} on={Math.round((m.p / 100) * dots)} size={desktop ? 8 : 6.5} gap={desktop ? 5.6 : 3.5} className="lg:mt-2" />
+            <span className="t-label ml-auto text-ink2 lg:hidden">{m.p}%</span>
+            <span className="t-data w-[64px] text-right lg:hidden">{fmt(m.g, 1)} G</span>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+
+  const note = <p className="t-body-s text-ink2">Dopo averlo creato lo trovi nella ricerca e puoi aggiungerlo al diario.</p>;
+  const submit = (
+    <Btn onClick={handleSubmit} disabled={!validationState.isValid || isSubmitting} className="flex-1 lg:w-[200px] lg:flex-none">
+      {isSubmitting ? "Creando..." : "Crea alimento"}
+    </Btn>
+  );
+
+  if (desktop) {
+    return (
+      <Modal onClose={onClose} width={880}>
+        <div className="flex items-start justify-between px-2">
+          <div>
+            <h2 className="t-title">Crea alimento</h2>
+            <p className="t-body-s mt-1 text-ink2">Usa i valori dell’etichetta, riferiti a 100 g.</p>
+          </div>
+          <CloseBtn onClick={onClose} />
+        </div>
+        <div className="mt-[26px] flex gap-8 px-2">
+          <div className="w-[440px]">{fields}</div>
+          <div className="flex flex-1 flex-col rounded-3xl bg-control px-6 pb-6 pt-6">
+            {preview}
+            <div className="mt-10">{note}</div>
+          </div>
+        </div>
+        <div className="mt-14 flex justify-end gap-4 px-2">
+          <Btn kind="secondary" className="w-[160px]" onClick={onClose}>Annulla</Btn>
+          {submit}
+        </div>
+      </Modal>
+    );
+  }
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <Container css="p-4">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="bg-orange-900/50 rounded-lg p-1.5">
-                <Apple className="w-5 h-5 text-orange-400" />
-              </div>
-              <h2 className="text-white font-medium">Crea Alimento Personalizzato</h2>
-            </div>
-            <button
-              className="text-gray-400 hover:text-white p-1"
-              onClick={onClose}
-            >
-              <X size={20} />
-            </button>
-          </div>
-
-          {/* Main Form Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left Column - Form Fields */}
-            <div className="space-y-4">
-              {/* Basic Info */}
-              <div className="bg-gray-800 rounded-lg p-4">
-                <h3 className="text-white text-sm font-medium mb-3">Informazioni Base</h3>
-                <div className="space-y-3">
-                  <Input
-                    label="Nome Alimento"
-                    value={formData.name}
-                    onChange={(value) => handleInputChange("name", value)}
-                    placeHolder="es. Pasta integrale fatta in casa"
-                  >
-                    <Utensils className="w-4 h-4 text-gray-400" />
-                  </Input>
-                  
-                  <Input
-                    label="Descrizione (opzionale)"
-                    value={formData.description}
-                    onChange={(value) => handleInputChange("description", value)}
-                    placeHolder="es. Pasta preparata con farina integrale"
-                  >
-                    <Utensils className="w-4 h-4 text-gray-400" />
-                  </Input>
-
-                  <Input
-                    label="URL Immagine (opzionale)"
-                    value={formData.imageUrl}
-                    onChange={(value) => handleInputChange("imageUrl", value)}
-                    placeHolder="https://..."
-                  >
-                    <Camera className="w-4 h-4 text-gray-400" />
-                  </Input>
-                </div>
-              </div>
-
-              {/* Nutrition Info */}
-              <div className="bg-gray-800 rounded-lg p-4">
-                <h3 className="text-white text-sm font-medium mb-3">Valori Nutrizionali (per 100g)</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    label="Calorie"
-                    value={formData.calories}
-                    onChange={(value) => handleInputChange("calories", value)}
-                    placeHolder="0"
-                    type="number"
-                  >
-                    <span className="text-red-400 text-xs">kcal</span>
-                  </Input>
-
-                  <Input
-                    label="Proteine (g)"
-                    value={formData.proteins}
-                    onChange={(value) => handleInputChange("proteins", value)}
-                    placeHolder="0"
-                    type="number"
-                  >
-                    <span className="text-blue-400 text-xs">P</span>
-                  </Input>
-
-                  <Input
-                    label="Carboidrati (g)"
-                    value={formData.carbohydrates}
-                    onChange={(value) => handleInputChange("carbohydrates", value)}
-                    placeHolder="0"
-                    type="number"
-                  >
-                    <span className="text-yellow-400 text-xs">C</span>
-                  </Input>
-
-                  <Input
-                    label="Grassi (g)"
-                    value={formData.fats}
-                    onChange={(value) => handleInputChange("fats", value)}
-                    placeHolder="0"
-                    type="number"
-                  >
-                    <span className="text-purple-400 text-xs">G</span>
-                  </Input>
-                </div>
-              </div>
-
-            </div>
-
-            {/* Right Column - Quantity & Preview */}
-            <div className="space-y-4">
-              {/* Quantity Controls */}
-              <div className="bg-gray-800 rounded-lg p-4">
-                <h3 className="text-white text-sm font-medium mb-3">Quantità</h3>
-                
-
-                {/* Quantity input with controls */}
-                <div className="flex items-center gap-2">
-
-                  <div className="flex-1">
-                    <input
-                      className="w-full bg-gray-700 text-white text-center py-2 px-2 rounded text-sm focus:outline-none focus:ring-1 focus:ring-orange-500"
-                      placeholder="100"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Nutrition Preview */}
-              <div className="space-y-3">
-                {/* Calories */}
-                <div className="bg-gradient-to-r from-red-500/20 to-red-600/20 border border-red-500/40 rounded-lg p-4">
-                  <div className="text-center">
-                    <p className="text-red-300 text-xs font-medium">
-                      Calorie per {/* {quantity || "0"} */}g
-                    </p>
-                    <p className="text-white text-2xl font-bold">
-                      {formData?.calories}{" "}
-                      <span className="text-sm font-normal">kcal</span>
-                    </p>
-                  </div>
-                </div>
-
-                {/* Macros */}
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="bg-blue-500/20 border border-blue-500/40 rounded-lg p-2 text-center">
-                    <p className="text-blue-300 text-xs">Proteine</p>
-                    <p className="text-white text-sm font-bold">
-                      {formData.proteins}g
-                    </p>
-                  </div>
-                  <div className="bg-yellow-500/20 border border-yellow-500/40 rounded-lg p-2 text-center">
-                    <p className="text-yellow-300 text-xs">Carbs</p>
-                    <p className="text-white text-sm font-bold">
-                      {formData.carbohydrates}g
-                    </p>
-                  </div>
-                  <div className="bg-purple-500/20 border border-purple-500/40 rounded-lg p-2 text-center">
-                    <p className="text-purple-300 text-xs">Grassi</p>
-                    <p className="text-white text-sm font-bold">
-                      {formData.fats}g
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Error Messages */}
-              {/* {Object.values(validationState.errors).some(error => error) && (
-                <div className="bg-red-500/20 border border-red-500/40 rounded-lg p-3">
-                  <p className="text-red-300 text-sm font-medium mb-1">Errori nel form:</p>
-                  {Object.values(validationState.errors).map((error, index) => 
-                    error && (
-                      <p key={index} className="text-red-400 text-xs">• {error}</p>
-                    )
-                  )}
-                </div>
-              )}
- */}
-              {/* Action Buttons */}
-              <div className="space-y-2">
-                <button
-                  onClick={handleSubmit}
-                  disabled={!validationState.isValid || isSubmitting}
-                  className={`w-full py-3 px-4 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-all ${
-                    validationState.isValid && !isSubmitting
-                      ? "bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white"
-                      : "bg-gray-600 text-gray-400 cursor-not-allowed"
-                  }`}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Creando...
-                    </>
-                  ) : (
-                    <>
-                      <Plus size={16} />
-                      Crea
-                    </>
-                  )}
-                </button>
-
-                <button
-                  onClick={onClose}
-                  className="w-full bg-gray-700 hover:bg-gray-600 text-gray-300 py-2 px-4 rounded-lg text-sm transition-colors"
-                >
-                  Annulla
-                </button>
-              </div>
-            </div>
-          </div>
-        </Container>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-void">
+      <div className="px-5 pb-[140px] pt-[15px]">
+        <div className="flex items-center justify-between">
+          <button onClick={onClose} aria-label="Chiudi" className="cursor-pointer"><X size={22} strokeWidth={1.5} /></button>
+          <span className="t-label text-ink2">PERSONALIZZATO</span>
+        </div>
+        <div className="mt-6"><Dot text="crea" p={5} /></div>
+        <p className="t-body mb-[22px] mt-[14px] text-ink2">Usa i valori dell’etichetta, riferiti a 100 g.</p>
+        {fields}
+        <section className="mt-[34px] rounded-[28px] bg-tile px-5 pb-[22px] pt-5">{preview}</section>
+        <div className="mt-4">{note}</div>
+      </div>
+      <div className="fixed inset-x-0 bottom-0 flex gap-4 border-t border-line bg-void px-5 pb-[42px] pt-[18px]">
+        <Btn kind="secondary" className="flex-1" onClick={onClose}>Annulla</Btn>
+        {submit}
       </div>
     </div>
   );

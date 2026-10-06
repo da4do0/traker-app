@@ -10,7 +10,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    return <div className="loading">Caricamento...</div>;
+    return <div className="flex min-h-screen items-center justify-center bg-void"><span className="t-label text-ink2">Caricamento...</span></div>;
   }
 
   if (!isAuthenticated) {

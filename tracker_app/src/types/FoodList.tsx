@@ -45,10 +45,6 @@ export interface MealType {
   color: string;
 }
 
-export interface QuickStatsProps {
-  stats: DailyStats;
-}
-
 export interface EditFoodModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -71,9 +67,4 @@ export interface MealSectionProps {
   onEditFood: (food: FoodEntry) => void;
   onDeleteFood: (food: FoodEntry) => void;
   searchQuery: string;
-}
-
-export interface ErrorDisplayProps {
-  error: string;
-  onDismiss: () => void;
 }
