@@ -1,183 +1,123 @@
-# 🥗 Nutrition & Weight Tracker App
+<p align="center">
+  <img src="docs/cover.png" alt="Bilancio: diario alimentare e peso in linguaggio dot-matrix" width="100%">
+</p>
 
-Una completa applicazione web per il monitoraggio della nutrizione e del peso, con un backend ASP.NET Core e un frontend React con TypeScript.
+<p align="center">
+  <b>Diario alimentare e peso con una quota calorica calcolata su di te.</b><br>
+  Web app full-stack · React + ASP.NET Core · prodotti da OpenFoodFacts
+</p>
 
-## 📋 Panoramica
+<p align="center">
+  <img alt="React 19" src="https://img.shields.io/badge/React-19-000?style=flat-square&logo=react&logoColor=fff">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-000?style=flat-square&logo=typescript&logoColor=fff">
+  <img alt="Vite 7" src="https://img.shields.io/badge/Vite-7-000?style=flat-square&logo=vite&logoColor=fff">
+  <img alt="Tailwind CSS 4" src="https://img.shields.io/badge/Tailwind_CSS-4-000?style=flat-square&logo=tailwindcss&logoColor=fff">
+  <img alt=".NET 8" src="https://img.shields.io/badge/ASP.NET_Core-8-000?style=flat-square&logo=dotnet&logoColor=fff">
+  <img alt="SQL Server" src="https://img.shields.io/badge/SQL_Server-EF_Core_9-000?style=flat-square&logo=microsoftsqlserver&logoColor=fff">
+  <img alt="OpenFoodFacts" src="https://img.shields.io/badge/dati-OpenFoodFacts-d71921?style=flat-square">
+</p>
 
-Questa applicazione permette agli utenti di:
-- **Tracciare l'alimentazione quotidiana** con calcolo automatico di calorie e macronutrienti
-- **Monitorare il peso corporeo** con grafici di andamento e metriche BMI/FFMI
-- **Cercare alimenti** tramite database USDA e OpenFoodFacts
-- **Scansionare codici a barre** per identificare prodotti alimentari
-- **Visualizzare progressi** verso obiettivi di peso personalizzati
-- **Calcolare metabolismo basale (BMR)** e fabbisogno energetico totale (TDEE)
+---
 
-## 🏗️ Architettura
+## Cosa fa
 
-### Backend (.NET Core)
-- **Framework**: ASP.NET Core Web API
-- **Database**: SQL Server con Entity Framework Core
-- **API Esterne**: USDA FoodData Central, OpenFoodFacts
-- **Autenticazione**: Sistema utenti con gestione profili
+**La quota è tua, non generica.** In registrazione Bilancio calcola il fabbisogno dal vivo mentre compili il modulo:
+metabolismo basale con l'equazione di **Mifflin-St Jeor**, moltiplicato per il livello di attività (da ×1,2 a ×1,9),
+poi corretto per l'obiettivo: **−500 kcal** per perdere peso, **+400 kcal** per aumentarlo.
 
-### Frontend (React + TypeScript)
-- **Framework**: React 19 con TypeScript
-- **Routing**: React Router DOM
-- **Styling**: Tailwind CSS + Material-UI
-- **Charts**: MUI X-Charts per visualizzazioni
-- **Barcode**: html5-qrcode per scansione codici a barre
+| | |
+|---|---|
+| **Oggi** | Kcal rimanenti, barra a segmenti divisa per pasto, macro in % di energia e il percorso della quota: BMR → TDEE → quota. |
+| **Cerca** | Ricerca per nome o per codice a barre su OpenFoodFacts, scanner con la fotocamera (con torcia dove supportata), Nutri-Score, NOVA, ingredienti e allergeni. |
+| **Aggiungi** | Pasto, quantità con preset e ±10 g, anteprima di come cambia la giornata prima di confermare. |
+| **Diario** | Gli alimenti di oggi divisi per pasto, con modifica, eliminazione e filtro. |
+| **Peso** | Progresso verso l'obiettivo, grafico a punti su 1M · 3M · 6M · 1A, BMI con scala e FFMI. |
+| **Personalizzati** | Crei un alimento con i valori dell'etichetta (calorie e macro per 100 g), salvato nel tuo database. |
 
-## 🚀 Funzionalità Principali
+Layout dedicati per telefono e desktop: barra di navigazione in basso su mobile, rail laterale e griglia a 12 colonne da 1024 px in su.
 
-### 🍎 Gestione Alimentazione
-- Ricerca alimenti da database OpenFoodFacts
-- Scansione codici a barre per identificazione prodotti
-- Aggiunta manuale di alimenti personalizzati
-- Calcolo automatico di calorie e macronutrienti (carboidrati, proteine, grassi)
-- Tracciamento consumo giornaliero con barre di progresso
+## Design
 
-### ⚖️ Monitoraggio Peso
-- Registrazione peso e altezza con calcolo BMI e FFMI
-- Grafici di andamento temporale del peso
-- Impostazione obiettivi di peso (perdita/mantenimento/aumento)
-- Calcolo automatico del progresso verso l'obiettivo
-- Visualizzazione trend mensili
+<p align="center">
+  <img src="docs/desktop.png" alt="Dashboard desktop di Bilancio" width="100%">
+</p>
 
-### 📊 Dashboard Nutrizionale
-- Panoramica calorie consumate vs obiettivo giornaliero
-- Distribuzione macronutrienti con visualizzazione colorata
-- Calcolo BMR (metabolismo basale) e TDEE (fabbisogno totale)
-- Statistiche riepilogative personalizzate
+L'interfaccia è stata progettata da zero in Figma e poi riportata nel codice, schermata per schermata.
 
-### 👤 Gestione Utenti
-- Sistema di registrazione e autenticazione
-- Profili personalizzati con dati biometrici
-- Impostazione livelli di attività fisica
-- Obiettivi calorici personalizzati
+- **Dot-matrix**: numeri e titoli sono disegnati in SVG come punti tondi su una griglia 5×7, non con un font.
+- **Glyph**: la barra delle calorie è fatta di segmenti, uno per gruppo di pasto; i nuovi si accendono in sequenza.
+- **Un solo colore**: nero, grigi e bianco. Il **rosso** compare solo per il dato di oggi e per i segnali da notare.
+- **Tipografia**: Host Grotesk per i testi, Geist Mono per etichette e dati, entrambi self-hosted.
+- **Movimento**: numeri che scorrono in 600 ms e segmenti sfasati di 60 ms, disattivati con `prefers-reduced-motion`.
 
-## 📁 Struttura del Progetto
+Il sistema completo (colori, tipografia, componenti, regole) è in [`DESIGN.md`](DESIGN.md); utenti e principi di prodotto in [`PRODUCT.md`](PRODUCT.md).
 
-```
-traker-app/
-├── backend/
-│   └── Api/                     # ASP.NET Core Web API
-│       ├── Controllers/         # Controller API (Food, User, Weight)
-│       ├── model/
-│       │   └── Entities/        # Modelli del database
-│       ├── Services/            # Servizi business logic
-│       ├── Interfaces/          # Interfacce servizi
-│       └── Migrations/          # Migrazioni database EF Core
-└── tracker_app/                 # React Frontend
-    ├── src/
-    │   ├── components/          # Componenti React riutilizzabili
-    │   ├── pages/               # Pagine principali dell'app
-    │   ├── api/                 # Client API per backend
-    │   ├── hooks/               # Custom React hooks
-    │   ├── types/               # Definizioni TypeScript
-    │   └── utils/               # Utility e calcoli
-    └── public/                  # Asset statici
-```
+<p align="center">
+  <img src="docs/flusso-mobile.png" alt="Flusso mobile: cerca, scheda prodotto, quantità, giornata aggiornata" width="100%">
+</p>
 
-## 🛠️ Tecnologie Utilizzate
+> Le immagini sono mockup Figma con dati dimostrativi.
 
-### Backend
-- **ASP.NET Core 8** - Framework web API
-- **Entity Framework Core** - ORM per database
-- **SQL Server** - Database relazionale
-- **Swagger** - Documentazione API
-- **HttpClient** - Chiamate API esterne
+## Stack
 
-### Frontend
-- **React 19** - Libreria UI
-- **TypeScript** - Tipizzazione statica
-- **Vite** - Build tool e dev server
-- **Tailwind CSS** - Framework CSS utility-first
-- **Material-UI (MUI)** - Componenti UI e grafici
-- **React Router** - Routing lato client
-- **Lucide React** - Libreria icone
+| | |
+|---|---|
+| **Frontend** | React 19 · TypeScript · Vite 7 · Tailwind CSS 4 · React Router 7 · lucide-react · ZXing |
+| **Backend** | ASP.NET Core 8 Web API · Entity Framework Core 9 · SQL Server · BCrypt · Swagger |
+| **Dati** | OpenFoodFacts per ricerca testuale e codici a barre |
 
-### API Esterne
-- **USDA FoodData Central** - Database nutrizionale americano
-- **OpenFoodFacts** - Database prodotti alimentari globale
+## Avvio in locale
 
-## 🗄️ Schema Database
+**Prerequisiti:** .NET 8 SDK · Node.js 20.19+ · SQL Server (va bene anche Express o LocalDB)
 
-### Entità Principali
-- **User**: Informazioni utente e impostazioni
-- **Food**: Alimenti con valori nutrizionali
-- **UserFood**: Alimenti consumati dall'utente
-- **Misuration**: Misurazioni peso/altezza dell'utente
-- **Activity**: Attività fisiche
-- **Category**: Categorie di attività
+### 1. Backend
 
-### Relazioni
-- User 1:N Misuration (storico peso)
-- User 1:N Activity (attività fisiche)
-- User N:N Food (tramite UserFood)
-
-## 🚀 Setup e Installazione
-
-### Prerequisiti
-- .NET 8 SDK
-- Node.js 18+
-- SQL Server (LocalDB o Server)
-
-### Backend Setup
 ```bash
 cd backend/Api
-# Configurare connection string in appsettings.json
-dotnet restore
-dotnet ef database update
-dotnet run
+dotnet tool install --global dotnet-ef   # solo la prima volta
+dotnet ef database update                # crea il database dalle migrazioni
+dotnet run                               # http://localhost:5132 · Swagger su /swagger
 ```
 
-### Frontend Setup
+La connection string è in `backend/Api/appsettings.json`. Di default punta a un'istanza locale con autenticazione Windows:
+
+```json
+"DefaultConnection": "Server=localhost;Database=TrakerAppDb;Trusted_Connection=True;TrustServerCertificate=True;"
+```
+
+Con LocalDB usa `Server=(localdb)\\mssqllocaldb;...`.
+
+### 2. Frontend
+
 ```bash
 cd tracker_app
 npm install
-npm run dev
+npm run dev                              # http://localhost:5173
 ```
 
-### Configurazione API Keys
-Aggiungere in `backend/Api/appsettings.json`:
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=TrackerAppDb;Trusted_Connection=true;"
-  },
-  "FoodApiKey": "YOUR_USDA_API_KEY"
-}
+L'indirizzo del backend è in `tracker_app/src/api/APIHandler.tsx` (`endpointAPI`).
+
+## Struttura
+
+```
+traker-app/
+├── backend/Api/
+│   ├── Controllers/     # food, user, weight
+│   ├── Services/        # calcolo della quota, alimenti, peso
+│   ├── model/Entities/  # User, Food, User_food, Misuration…
+│   └── Migrations/      # EF Core
+├── tracker_app/src/
+│   ├── pages/           # Oggi, Cerca, Diario, Peso, Accedi, Registrati
+│   ├── components/      # ui.tsx (dot-matrix, Glyph, campi, modali), Shell, schede
+│   ├── api/             # client HTTP verso il backend
+│   └── utils/           # BMI, FFMI, andamento del peso
+├── docs/                # immagini del README
+├── DESIGN.md            # design system
+└── PRODUCT.md           # contesto di prodotto
 ```
 
-## 📡 API Endpoints
+---
 
-### Food Controller
-- `GET /food/search/usa/{query}` - Ricerca alimenti USDA
-- `GET /food/search/eu/{query}` - Ricerca prodotti OpenFoodFacts
-- `GET /food/barcode/{barcode}` - Ricerca per codice a barre
-- `POST /food/user/add` - Aggiungere alimento al diario
-
-### User Controller
-- `POST /users/register` - Registrazione utente
-- `POST /users/login` - Login utente
-- `GET /users/{id}/info` - Informazioni utente
-- `GET /users/{id}/calories/today` - Calorie giornaliere
-
-### Weight Controller
-- `GET /weight/user/{userId}` - Dati peso utente
-- `POST /weight/add` - Aggiungere misurazione peso
-
-## 📱 Screenshots e UI
-
-L'applicazione presenta:
-- **Dashboard principale** con panoramica nutrizione e peso
-- **Pagina ricerca alimenti** con scanner codici a barre
-- **Pagina monitoraggio peso** con grafici interattivi
-- **Sistema di autenticazione** con registrazione completa
-- **Design responsive** ottimizzato per mobile e desktop
-
-
-
-## 🐛 Bug Reports
-
-Per segnalare bug o richiedere nuove funzionalità, apri una issue nel repository GitHub.
+<p align="center">
+  Progetto di <a href="https://github.com/da4do0">@da4do0</a>
+</p>
